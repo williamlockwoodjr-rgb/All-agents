@@ -1,6 +1,7 @@
 # Guardian × REA proposals (2026-11-10)
 
-NO-GO design review artifacts only. No installation, integration, or live testing authorized by these documents.
+NO-GO design review artifacts only. No installation, integration, or live
+training authorized by these documents.
 
 | File | Contents |
 | --- | --- |
