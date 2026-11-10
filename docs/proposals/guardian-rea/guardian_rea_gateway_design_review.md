@@ -1,17 +1,26 @@
 # Guardian × REA — External Gateway Design Review
 
-**Date:** 2026-11-10  
-**Status:** NO-GO — design proposal only; not implemented  
-**Pinned source tip:** `b2f3dc81fa503c2b9ff0d8625336ed2e74d1e829`  
-**Authority:** Read-only review and proposal writing only. No REA install, provider execution, live MCP connection, or host integration authorized.
+**Date:** 2026-11-10
+**Status:** NO-GO — design proposal only; not implemented
+**Pinned source tip:** `b2f3dc81fa503c2b9ff0d8625336ed2e74d1e829`
+**Authority:** Read-only review and proposal writing only. No REA install,
+provider execution, live MCP connection, or host integration authorized.
 
 ## 1. Bottom line
 
-REA’s documented security boundary is **not** an independent sandbox or multi-tenant authorization service. CLI and MCP share application workflows and run with the host process’s permissions (`SECURITY.md`, Security boundary / Threat model).
+REA’s documented security boundary is **not** an independent sandbox or
+multi-tenant authorization service. CLI and MCP share application workflows and
+run with the host process’s permissions (`SECURITY.md`, Security boundary /
+Threat model).
 
-**Architectural determination (source-derived, unexecuted):** integrate Agent 007 / Guardian with REA only behind an **external** Guardian tool gateway plus **OS-enforced** isolation. Until that gateway and isolation pass negative-path tests, REA integration remains **NO-GO**.
+**Architectural determination (source-derived, unexecuted):** integrate Agent 007 /
+Guardian with REA only behind an **external** Guardian tool gateway plus
+**OS-enforced** isolation. Until that gateway and isolation pass negative-path
+tests, REA integration remains **NO-GO**.
 
-This is an integration blocker / architectural risk statement. It is **not** a claim that an exploitable REA vulnerability was reproduced. Priority labels from the upstream Grok review are planning priorities, not CVSS scores.
+This is an integration blocker / architectural risk statement. It is **not** a
+claim that an exploitable REA vulnerability was reproduced. Priority labels from
+the upstream Grok review are planning priorities, not CVSS scores.
 
 ## 2. Evidence classes
 
@@ -40,7 +49,8 @@ This is an integration blocker / architectural risk statement. It is **not** a c
 
 ## 4. Invocation-route inventory (gateway must close)
 
-A Guardian that only proxies one MCP stdio pipe does **not** cover REA’s reachable surface.
+A Guardian that only proxies one MCP stdio pipe does **not** cover REA’s
+reachable surface.
 
 | Route | How reached | Bypass risk if gateway is stdio-only | Class |
 | --- | --- | --- | --- |
@@ -54,7 +64,10 @@ A Guardian that only proxies one MCP stdio pipe does **not** cover REA’s reach
 | Provider children (Hopper, Ghidra, GDB, Rizin, Frida, …) | Spawned after admitted entry | Privilege/side-effect after admission | OBSERVED |
 | Outbound IDA/JEB MCP, Cutter TCP, CDP inspector URLs | REA as client | Network reach from REA process | OBSERVED |
 
-**DERIVED requirement:** rejections must occur **before** REA receives a request, and non-gateway routes must be unavailable inside the isolation boundary (no CLI binary on PATH for the agent identity, no HTTP MCP listen, no host credential mount, no writable host secrets).
+**DERIVED requirement:** rejections must occur **before** REA receives a request,
+and non-gateway routes must be unavailable inside the isolation boundary (no CLI
+binary on PATH for the agent identity, no HTTP MCP listen, no host credential
+mount, no writable host secrets).
 
 ## 5. Proposed external gateway architecture (NOT implemented)
 
@@ -64,7 +77,7 @@ Agent 007 / user request
       v
 Guardian tool gateway — EXACT tool-name allowlist + typed argument validation
       |                            |
-      | DENY -> logged rejection   | allow -> audited admission
+      | DENY -> logged rejection    | allow -> audited admission
       v                            v
       X                 isolated OS identity / VM or container
                                      |
@@ -80,8 +93,11 @@ Guardian tool gateway — EXACT tool-name allowlist + typed argument validation
 ### 5.1 Enforcing party
 
 - The **Guardian gateway** is the only authority that admits tool calls.
-- Agent-generated text, MCP annotations, tool families, and REA config strings are **not** authority.
-- Fail closed on: unlisted method, schema mismatch, path escape, symlink/special-file policy violation, unexpected tool registration, startup misconfiguration, isolation probe failure.
+- Agent-generated text, MCP annotations, tool families, and REA config strings are
+  **not** authority.
+- Fail closed on: unlisted method, schema mismatch, path escape,
+  symlink/special-file policy violation, unexpected tool registration, startup
+  misconfiguration, isolation probe failure.
 
 ### 5.2 Exact-name allowlist (future lab trial — not approved)
 
@@ -92,15 +108,22 @@ After gateway + isolation are independently checked, candidate first methods:
 | `search_guidance` | Empty effects + target-content-free | Handler path, response content, ambient filesystem | Possible exact-name permit |
 | `read_guidance_section` | Same | Same + bounded section id / length args | Possible exact-name permit |
 
-**Denied initially (non-exhaustive):** `get_evidence_bundle`, `record_unknown`, `inspect_artifact`, `extract_artifact`, `open_binary`, `execute_rizin_command`, GDB/Rizin debug commands, Frida script execution, browser/Electron/process scenarios, Android device mutations, build computers, resets, exports, network operations, and every other method unless individually reviewed and approved.
+**Denied initially (non-exhaustive):** `get_evidence_bundle`, `record_unknown`,
+`inspect_artifact`, `extract_artifact`, `open_binary`, `execute_rizin_command`,
+GDB/Rizin debug commands, Frida script execution, browser/Electron/process
+scenarios, Android device mutations, build computers, resets, exports, network
+operations, and every other method unless individually reviewed and approved.
 
 Do **not** allow by family (`application`, `session`, …).
 
 ### 5.3 Argument validation
 
-- Exact JSON Schema / Zod-equivalent validation at the gateway for each allowed method.
+- Exact JSON Schema / Zod-equivalent validation at the gateway for each allowed
+  method.
 - Reject unknown properties (fail closed).
-- Paths: absolute paths only when explicitly required; confine to RO fixture root and dedicated scratch/output; reject `..`, symlink escapes, device nodes, FIFOs, and unexpected mount points (**INFERRED** OS policy details TBD).
+- Paths: absolute paths only when explicitly required; confine to RO fixture root
+  and dedicated scratch/output; reject `..`, symlink escapes, device nodes,
+  FIFOs, and unexpected mount points (**INFERRED** OS policy details TBD).
 - Size, string length, and nesting limits independent of REA’s own budgets.
 
 ### 5.4 Identity and isolation (OS-enforced)
@@ -114,28 +137,38 @@ Do **not** allow by family (`application`, `session`, …).
 | Resources | CPU, memory, disk quota, PIDs, wall-clock on the **process tree** | cgroups / ulimit / hypervisor |
 | Credentials | No ambient cloud/Git tokens, no publisher keys, no host MCP secrets | empty env + no mounts |
 
-REA config strings (`REA_MCP_TOOL_FAMILIES`, etc.) may reduce advertisement but **do not** replace these controls (`SECURITY.md` Host isolation / Resource bounds).
+REA config strings (`REA_MCP_TOOL_FAMILIES`, etc.) may reduce advertisement but
+**do not** replace these controls (`SECURITY.md` Host isolation / Resource
+bounds).
 
 ### 5.5 Logging and audit
 
 - Append-only admission log **outside** the agent-writable workspace.
-- Record: decision (allow/deny), exact method, argument digest (not full sensitive args by default), approval id, isolation identity, timestamps, cancellation/timeout outcomes.
-- Redact transport credentials and explicitly marked sensitive values; treat target-derived text in logs as untrusted and non-authoritative.
-- Denials and incomplete Evidence must remain visible; absence of an error is not completeness.
+- Record: decision (allow/deny), exact method, argument digest (not full sensitive
+  args by default), approval id, isolation identity, timestamps,
+  cancellation/timeout outcomes.
+- Redact transport credentials and explicitly marked sensitive values; treat
+  target-derived text in logs as untrusted and non-authoritative.
+- Denials and incomplete Evidence must remain visible; absence of an error is not
+  completeness.
 
 ### 5.6 Cancellation, truncation, Evidence semantics
 
-- Incomplete, truncated, cancelled, or timed-out Evidence → mark **UNKNOWN / UNAVAILABLE**.
+- Incomplete, truncated, cancelled, or timed-out Evidence → mark
+  **UNKNOWN / UNAVAILABLE**.
 - Never imply “no security event” from missing fields or quiet cancellation.
-- Preserve provenance markers (`untrusted_content`) when present; do not strip them for agent comfort.
+- Preserve provenance markers (`untrusted_content`) when present; do not strip
+  them for agent comfort.
 
 ### 5.7 Fail-closed startup
 
-Gateway must refuse to start (or refuse all calls) if any of the following are UNKNOWN/failed:
+Gateway must refuse to start (or refuse all calls) if any of the following are
+UNKNOWN/failed:
 
 - Isolation probes (network deny, FS confinement, no host secret mounts)
 - Allowlist/schema load integrity
-- Unexpected REA tool registration / catalog drift vs pinned expected set for the trial
+- Unexpected REA tool registration / catalog drift vs pinned expected set for the
+  trial
 - Logging sink unavailable
 - Resource limit application failure
 
@@ -154,19 +187,26 @@ Gateway must refuse to start (or refuse all calls) if any of the following are U
 | Cancellation ambiguity | Partial results | False “clean” conclusion | Explicit UNKNOWN/UNAVAILABLE |
 | Catalog drift / new tool registration | Evolving surface | Silent new capability | Startup catalog pin + fail closed |
 
-**UNKNOWN without execution:** concrete handler ambient FS for guidance tools; full symlink race windows against every provider helper; measured egress from every child binary; Prometheus Super Engine interaction (explicitly out of scope / must not be altered).
+**UNKNOWN without execution:** concrete handler ambient FS for guidance tools;
+full symlink race windows against every provider helper; measured egress from
+every child binary; Prometheus Super Engine interaction (explicitly out of scope /
+must not be altered).
 
 ## 7. Relationship to REA product boundaries
 
 - This proposal does **not** change REA source, installers, or Prometheus assets.
 - It does **not** assert that REA should become a sandbox.
-- Compatible with REA’s own docs: host must enforce permissions; HTTP MCP stays untrusted/local; Evidence remains potentially sensitive.
+- Compatible with REA’s own docs: host must enforce permissions; HTTP MCP stays
+  untrusted/local; Evidence remains potentially sensitive.
 
 ## 8. Next owner decision (see memo)
 
-Approve or reject a **separate** implementation plan for a **mock-only** Guardian gateway on a fresh branch, with evidence-led negative-path tests against a mocked REA endpoint.
+Approve or reject a **separate** implementation plan for a **mock-only** Guardian
+gateway on a fresh branch, with evidence-led negative-path tests against a mocked
+REA endpoint.
 
-Approval of that plan does **not** approve REA installation, provider execution, or any live allowlist expansion.
+Approval of that plan does **not** approve REA installation, provider execution,
+or any live allowlist expansion.
 
 ## 9. Companion artifacts
 

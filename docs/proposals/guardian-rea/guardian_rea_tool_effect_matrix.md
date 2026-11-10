@@ -1,12 +1,18 @@
 # Guardian REA tool effect matrix (source inventory)
 
-**Status:** NO-GO design review artifact — source inventory only. No allowlist approved. No REA installation, live MCP session, or provider execution was performed for this matrix.
+**Status:** NO-GO design review artifact — source inventory only. No allowlist
+approved. No REA installation, live MCP session, or provider execution was
+performed for this matrix.
 
 **Pinned tip:** `b2f3dc81fa503c2b9ff0d8625336ed2e74d1e829` (`b2f3dc81f`).
 
-**Claim classes used below:** OBSERVED (cited source), DERIVED (direct consequence of OBSERVED), INFERRED (reasonable but unexecuted), UNKNOWN (not established).
+**Claim classes used below:** OBSERVED (cited source), DERIVED (direct consequence
+of OBSERVED), INFERRED (reasonable but unexecuted), UNKNOWN (not established).
 
-Primary sources: `src/contracts/toolEffects.ts`, `src/contracts/artifactToolContracts.ts`, `src/contracts/toolFamilies.ts`, `src/contracts/toolFamilyIds.ts`, `docs/reference/mcp-contracts.md` (annotations L1561–1575; families L2177–2217; untrusted content L646–669), `SECURITY.md`.
+Primary sources: `src/contracts/toolEffects.ts`,
+`src/contracts/artifactToolContracts.ts`, `src/contracts/toolFamilies.ts`,
+`src/contracts/toolFamilyIds.ts`, `docs/reference/mcp-contracts.md` (annotations
+L1561–1575; families L2177–2217; untrusted content L646–669), `SECURITY.md`.
 
 ## Guardian policy notes (not authorization)
 
@@ -35,7 +41,8 @@ Primary sources: `src/contracts/toolEffects.ts`, `src/contracts/artifactToolCont
 | `mutatesDevice` | Changes attached Android device | toolEffects.ts:19–20 |
 | `idempotent` | Safe to repeat with same inputs | toolEffects.ts:21 |
 
-Defaults for `effects()` / missing overrides (`toolEffects.ts:32–44`): all side-effect flags `false`, `idempotent: true`.
+Defaults for `effects()` / missing overrides (`toolEffects.ts:32–44`): all
+side-effect flags `false`, `idempotent: true`.
 
 Derived MCP annotations (`annotationsFromEffects`, L927–949; docs L1561–1569):
 
@@ -46,7 +53,10 @@ Derived MCP annotations (`annotationsFromEffects`, L927–949; docs L1561–1569
 | `idempotentHint` | `idempotent` |
 | `openWorldHint` | `launchesProcess` ∨ `accessesNetwork` |
 
-Advertised `TOOL_EFFECTS` (L909–917) is the **composed** audit: for provider-composed entries, session base ∪ global provider possibilities. `toolSessionEffects` (L920–925) returns the session base only. Tables below use **composed** flags unless noted.
+Advertised `TOOL_EFFECTS` (L909–917) is the **composed** audit: for
+provider-composed entries, session base ∪ global provider possibilities.
+`toolSessionEffects` (L920–925) returns the session base only. Tables below use
+**composed** flags unless noted.
 
 ## Empty `effects()` means zero tracked effect (not incomplete docs)
 
@@ -75,28 +85,30 @@ All other tools: `returnsTargetContent: true` / `toolReturnsTargetContent(name) 
 
 ## REA_MCP_TOOL_FAMILIES mapping
 
-`REA_MCP_TOOL_FAMILIES` = comma-separated subset of `TOOL_FAMILY_IDS` (`toolFamilyIds.ts:8–27`). Ownership: `TOOL_FAMILY_DEFINITIONS` (`toolFamilies.ts:120–251`). Unset ⇒ full catalog.
+`REA_MCP_TOOL_FAMILIES` = comma-separated subset of `TOOL_FAMILY_IDS`
+(`toolFamilyIds.ts:8–27`). Ownership: `TOOL_FAMILY_DEFINITIONS`
+(`toolFamilies.ts:120–251`). Unset ⇒ full catalog.
 
 | Family id (`TOOL_FAMILY_IDS` order) | Surface | Count | Tools (canonical ownership) |
 | --- | --- | ---: | --- |
-| `direct` | `official-proxy` | 41 | `address_name`, `address_to_file_offset`, `annotate_native_function`, `comment`, `current_address`, `current_document`, `current_procedure`, `goto_address`, `inline_comment`, `inspect_native_data_type`, `inspect_native_instruction`, `inspect_native_load_image`, `list_bookmarks`, `list_documents`, `list_names`, `list_procedures`, `list_segments`, `list_strings`, `next_address`, `prev_address`, `procedure_address`, `procedure_assembly`, `procedure_callees`, `procedure_callers`, `procedure_info`, `procedure_pseudo_code`, `procedure_references`, `read_bytes`, `read_function_instructions`, `resolve_containing_procedure`, `resolve_native_call_targets`, `search_bytes`, `search_procedures`, `search_strings`, `set_address_name`, `set_addresses_names`, `set_bookmark`, `set_comment`, `set_inline_comment`, `unset_bookmark`, `xrefs` |
-| `enhanced` | `enhanced` | 15 | `analyze_function`, `analyze_swift_types`, `batch_decompile`, `binary_overview`, `decompile_all`, `find_xrefs_to_name`, `get_call_graph`, `get_objc_classes`, `get_objc_protocols`, `inspect_native_api`, `inspect_native_dispatch_metadata`, `trace_call_path`, `trace_feature`, `trace_native_ui_action`, `trace_native_values` |
-| `native` | `native-provider` | 37 | `capture_native_ui_scenario`, `demangle_swift`, `inspect_macho`, `inspect_plist`, `inspect_signature`, `list_architectures`, `observe_native_calls`, `observe_native_ui`, `inspect_apple_ips`, `inspect_binary_hardening`, `inspect_binary_layout`, `inspect_byte_entropy`, `inspect_devicetree`, `inspect_elf_notes`, `inspect_elf_unwind_ranges`, `inspect_kernel_build_config`, `inspect_kernel_module`, `inspect_native_exports`, `inspect_native_initializers`, `inspect_pe_certificates`, `inspect_pe_imports`, `inspect_pe_load_config`, `inspect_pe_resources`, `inspect_recorded_crash`, `inspect_windows_shortcut`, `cutter_command`, `list_cutter_sessions`, `execute_rizin_command`, `inspect_with_objdump`, `close_gdb_session`, `gdb_console`, `gdb_session_status`, `start_gdb_session`, `close_rizin_debug_session`, `rizin_debug_command`, `rizin_debug_session_status`, `start_rizin_debug_session` |
-| `artifact` | `artifact-provider` | 24 | `decode_interface_builder`, `extract_artifact`, `inspect_artifact`, `inspect_asset_catalog`, `inspect_keyed_archive`, `trace_dylib_resolution`, `inspect_desktop_application`, `inspect_evm_interface`, `inspect_go_binary`, `inspect_gpu_code_objects`, `inspect_il2cpp_metadata`, `inspect_model_artifact`, `inspect_rust_binary`, `inspect_python_pyc`, `inspect_erlang_beam`, `inspect_v8_code_cache`, `compare_wasm_interfaces`, `inspect_wasm_artifact`, `inspect_apk_signature`, `inspect_sqlite_database`, `inspect_packet_capture`, `inspect_packet_fields`, `decode_signal_recording`, `inspect_signal_decoders` |
-| `managed` | `managed` | 7 | `inspect_managed_artifact`, `inspect_managed_members`, `inspect_managed_native_boundaries`, `compare_managed_members`, `import_managed_reconstruction`, `project_managed_application_graph`, `verify_managed_native_boundaries` |
-| `firmware` | `firmware-provider` | 2 | `extract_firmware`, `inspect_firmware_regions` |
-| `android` | `android-provider` | 6 | `inspect_android_class`, `inspect_android_jni_bindings`, `inspect_android_method`, `inspect_android_package`, `search_android_classes`, `trace_android_references` |
-| `pcap` | `pcap-provider` | 2 | `inspect_pcap_capture`, `inspect_pcap_client` |
-| `flutter` | `flutter-provider` | 2 | `identify_flutter_build`, `inspect_dart_aot` |
-| `frida` | `instrumentation-provider` | 9 | `close_frida_session`, `frida_session_status`, `instrument_with_frida`, `list_frida_devices`, `list_frida_processes`, `load_frida_script`, `resume_frida_session`, `start_frida_session`, `unload_frida_script` |
-| `apktool` | `apktool-provider` | 2 | `decode_android_resources`, `inspect_apktool_client` |
-| `jeb` | `jeb-provider` | 4 | `decompile_jeb_item`, `inspect_jeb_client`, `list_jeb_units`, `open_jeb_project` |
-| `adb` | `adb-provider` | 24 | `capture_adb_screen`, `collect_adb_bugreport`, `inspect_adb_client`, `inspect_adb_device`, `inspect_adb_display`, `inspect_adb_package`, `inspect_adb_window`, `install_adb_package`, `list_adb_devices`, `list_adb_directory`, `list_adb_features`, `list_adb_packages`, `list_adb_processes`, `list_adb_services`, `pull_adb_file`, `pull_adb_package`, `push_adb_file`, `read_adb_logcat`, `read_adb_setting`, `resolve_adb_packages`, `start_adb_activity`, `start_adb_app`, `stop_adb_app`, `uninstall_adb_package` |
-| `browser` | `browser-provider` | 12 | `analyze_web_bundle`, `capture_browser_scenario`, `capture_web_screenshot`, `compare_web_captures`, `compare_web_screenshots`, `discover_webmcp_tools`, `inspect_web_page`, `list_browser_targets`, `observe_web_session`, `inspect_web_event_listeners`, `observe_web_execution`, `inspect_web_network_capture` |
-| `electron` | `electron-provider` | 6 | `analyze_javascript_application`, `capture_electron_scenario`, `inspect_electron_fuses`, `inspect_electron_page`, `list_electron_targets`, `reconcile_javascript_runtime` |
-| `javascript-runtime` | `runtime-provider` | 2 | `list_javascript_runtime_targets`, `observe_javascript_runtime` |
-| `application` | `application-workflow` | 34 | `build_reconstruction_obligation_ledger`, `compare_application_versions`, `compare_javascript_export_shapes`, `compare_source_to_bundle`, `compare_static_and_observed_endpoints`, `evaluate_reconstruction_coverage`, `guided_workflows`, `inspect_api_contract`, `inspect_playwright_trace`, `project_android_application_graph`, `project_apple_application_graph`, `project_harmony_application_graph`, `read_guidance_section`, `search_guidance`, `trace_application_feature`, `trace_javascript_semantics`, `inspect_analysis_settings`, `update_analysis_settings`, `export_environment_bundle`, `act_on_build_computer`, `check_build_task`, `close_build_computer`, `export_build_environment`, `mark_build_checkpoint`, `measure_build_task`, `record_build_consent`, `start_build_capture`, `start_build_computer`, `stop_build_capture`, `inspect_analysis_view`, `export_web_scripts`, `trace_web_module_imports`, `trace_web_source_location`, `recover_javascript_sources` |
-| `session` | `session` | 24 | `binary_session`, `build_call_path`, `capture_process_scenario`, `close_binary`, `compare_artifacts`, `compare_bundles`, `compare_functions`, `compare_process_captures`, `correlate_static_and_runtime`, `export_evidence_bundle`, `find_changed_behavior`, `get_evidence_bundle`, `get_navigation_context`, `import_evidence_bundle`, `inspect_address_context`, `list_unknowns`, `match_native_functions`, `open_binary`, `open_bundle_resources`, `record_unknown`, `reset_investigation`, `update_unknown`, `verify_reconstruction`, `verify_unknown_resolution` |
+| `direct` | `official-proxy` | 41 | ... |
+| `enhanced` | `enhanced` | 15 | ... |
+| `native` | `native-provider` | 37 | ... |
+| `artifact` | `artifact-provider` | 24 | ... |
+| `managed` | `managed` | 7 | ... |
+| `firmware` | `firmware-provider` | 2 | ... |
+| `android` | `android-provider` | 6 | ... |
+| `pcap` | `pcap-provider` | 2 | ... |
+| `flutter` | `flutter-provider` | 2 | ... |
+| `frida` | `instrumentation-provider` | 9 | ... |
+| `apktool` | `apktool-provider` | 2 | ... |
+| `jeb` | `jeb-provider` | 4 | ... |
+| `adb` | `adb-provider` | 24 | ... |
+| `browser` | `browser-provider` | 12 | ... |
+| `electron` | `electron-provider` | 6 | ... |
+| `javascript-runtime` | `runtime-provider` | 2 | ... |
+| `application` | `application-workflow` | 34 | ... |
+| `session` | `session` | 24 | ... |
 
 **Total: 253 tools** across 18 families.
 
@@ -129,7 +141,9 @@ All other tools: `returnsTargetContent: true` / `toolReturnsTargetContent(name) 
 
 ## Complete method-by-method inventory
 
-Side-effect columns list **true** flags only. `TCF` = target-content-free. `Empty` = bare `effects()`. `PC` = provider-composed audit. Annotation columns are derived from composed effects. Source = line in `toolEffects.ts`.
+Side-effect columns list **true** flags only. `TCF` = target-content-free. `Empty`
+= bare `effects()`. `PC` = provider-composed audit. Annotation columns are
+derived from composed effects. Source = line in `toolEffects.ts`.
 
 ### `direct`
 

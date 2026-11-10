@@ -1,17 +1,24 @@
 # Guardian × REA — Acceptance Plan (Unexecuted)
 
-**Date:** 2026-11-10  
-**Status:** Proposed tests only — **none of these tests were executed** in this review pass  
-**Pinned source tip:** `b2f3dc81fa503c2b9ff0d8625336ed2e74d1e829`  
-**Authorization:** Mock-only gateway testing requires a separate owner approval. Live REA / provider trials require yet another explicit approval after mock gates pass.
+**Date:** 2026-11-10
+**Status:** Proposed tests only — **none of these tests were executed** in this
+review pass
+**Pinned source tip:** `b2f3dc81fa503c2b9ff0d8625336ed2e74d1e829`
+**Authorization:** Mock-only gateway testing requires a separate owner approval.
+Live REA / provider trials require yet another explicit approval after mock gates
+pass.
 
 ## 1. Purpose
 
-Define fail-closed acceptance criteria and a staged test plan for an **external** Guardian gateway wrapping REA. This document does not authorize implementation or execution.
+Define fail-closed acceptance criteria and a staged test plan for an **external**
+Guardian gateway wrapping REA. This document does not authorize implementation or
+execution.
 
 ## 2. Acceptance criteria (proposed)
 
-Every criterion below must be demonstrated with recorded evidence (command output, packet capture, audit log excerpt, or equivalent). Untested items remain **UNKNOWN**, not pass.
+Every criterion below must be demonstrated with recorded evidence (command output,
+packet capture, audit log excerpt, or equivalent). Untested items remain
+**UNKNOWN**, not pass.
 
 | ID | Criterion | Pass evidence | Fail mode |
 | --- | --- | --- | --- |
@@ -39,7 +46,8 @@ Every criterion below must be demonstrated with recorded evidence (command outpu
 
 ### Stage 1 — Mock-only gateway (requires owner approval of implementation plan)
 
-**Fixture:** harmless markdown/docs queries; **mocked REA** that records every received JSON-RPC/MCP request and never launches providers.
+**Fixture:** harmless markdown/docs queries; **mocked REA** that records every
+received JSON-RPC/MCP request and never launches providers.
 
 | ID | Case | Expected |
 | --- | --- | --- |
@@ -56,7 +64,8 @@ Every criterion below must be demonstrated with recorded evidence (command outpu
 
 ### Stage 2 — Isolation probes without REA product install (separate approval)
 
-Use an empty or stub stdio server if needed — **not** a full REA install unless explicitly approved.
+Use an empty or stub stdio server if needed — **not** a full REA install unless
+explicitly approved.
 
 | ID | Case | Expected |
 | --- | --- | --- |
@@ -70,7 +79,8 @@ Use an empty or stub stdio server if needed — **not** a full REA install unles
 
 ### Stage 3 — Isolated REA trial (explicit later approval; out of current auth)
 
-Only after Stage 1–2 pass. Still RO fixtures; deny-all egress; guidance-only allowlist unless further approved.
+Only after Stage 1–2 pass. Still RO fixtures; deny-all egress; guidance-only
+allowlist unless further approved.
 
 | ID | Case | Expected |
 | --- | --- | --- |
@@ -79,7 +89,9 @@ Only after Stage 1–2 pass. Still RO fixtures; deny-all egress; guidance-only a
 | R3 | Catalog drift if REA version changes tool set | Startup fail or deny-all until pin updated |
 | R4 | Process-tree teardown on wall-clock | No leftover provider/helper processes |
 
-**Not in Stage 3 without further review:** any provider binary analysis, Frida/GDB/Rizin, browser, ADB, build computer, Evidence export, or network-using tools.
+**Not in Stage 3 without further review:** any provider binary analysis, Frida,
+GDB/Rizin, browser, ADB, build computer, Evidence export, or network-using
+tools.
 
 ## 4. Negative-path emphasis
 
@@ -95,8 +107,10 @@ Priority is **denial correctness**, not happy-path demos:
 ## 5. Evidence packaging rules
 
 - Prefer harmless public fixtures only.
-- Never attach real credentials, private binaries, Hopper docs, Ghidra projects, or Prometheus Super Engine materials.
-- Distinguish in every report: executed result vs source-derived expectation vs UNKNOWN.
+- Never attach real credentials, private binaries, Hopper docs, Ghidra projects,
+  or Prometheus Super Engine materials.
+- Distinguish in every report: executed result vs source-derived expectation vs
+  UNKNOWN.
 - Do not claim runtime reproduction that was not performed.
 
 ## 6. Exit criteria for “mock gateway plan approved”
@@ -107,4 +121,5 @@ Owner may approve implementation of Stage 1 only when:
 - Scope is limited to mock REA + gateway code on a fresh branch, and
 - No REA install / provider execution is implied.
 
-Exit criteria for any later live REA trial are **out of scope** until Stage 1–2 evidence exists.
+Exit criteria for any later live REA trial are **out of scope** until Stage 1–2
+evidence exists.
