@@ -10,7 +10,7 @@
 Choose one:
 
 1. **Defer** — keep NO-GO; no gateway implementation.
-2. **Approve mock-only plan** — authorize a *separate* implementation plan/PR for a
+2. **Approve mock-only plan** — authorize a _separate_ implementation plan/PR for a
    Guardian gateway that talks to a **mocked** REA endpoint, with Stage 1
    negative-path tests from `guardian_rea_acceptance_plan.md`.
 3. **Reject proposal framing** — require revision of the design artifacts before any
@@ -31,12 +31,12 @@ Therefore Agent 007 must not call REA until an **external** gateway and
 
 ## What this review delivered
 
-| Artifact | Role |
-| --- | --- |
-| `guardian_rea_gateway_design_review.md` | External gateway design + threat model |
-| `guardian_rea_tool_effect_matrix.md` | 253-tool effect/content inventory with citations |
-| `guardian_rea_acceptance_plan.md` | Unexecuted acceptance criteria and staged tests |
-| This memo | Decision gate |
+| Artifact                                | Role                                             |
+| --------------------------------------- | ------------------------------------------------ |
+| `guardian_rea_gateway_design_review.md` | External gateway design + threat model           |
+| `guardian_rea_tool_effect_matrix.md`    | 253-tool effect/content inventory with citations |
+| `guardian_rea_acceptance_plan.md`       | Unexecuted acceptance criteria and staged tests  |
+| This memo                               | Decision gate                                    |
 
 **Not delivered / not claimed:** implemented gateway, executed security tests,
 CVSS scores, exploit PoCs, or live REA behavior measurements.
