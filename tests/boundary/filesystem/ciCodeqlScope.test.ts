@@ -88,6 +88,7 @@ it("uses the scope in a bounded workflow gated on administrator activation", asy
       jobs: z.object({
         analyze: z.object({
           if: z.string(),
+          "runs-on": z.string(),
           permissions: z.object({
             contents: z.literal("read"),
             "security-events": z.literal("write"),
@@ -98,7 +99,10 @@ it("uses the scope in a bounded workflow gated on administrator activation", asy
           }),
           steps: z.array(
             z.object({
-              uses: z.string(),
+              name: z.string().optional(),
+              if: z.string().optional(),
+              run: z.string().optional(),
+              uses: z.string().optional(),
               with: z.record(z.string(), z.unknown()).optional(),
             }),
           ),
@@ -114,18 +118,41 @@ it("uses the scope in a bounded workflow gated on administrator activation", asy
     "javascript-typescript",
     "python",
     "actions",
+    "swift",
   ]);
+  expect(job["runs-on"]).toBe(
+    "${{ matrix.language == 'swift' && 'macos-latest' || 'ubuntu-latest' }}",
+  );
   const init = job.steps.find((step) =>
-    step.uses.startsWith("github/codeql-action/init@"),
+    step.uses?.startsWith("github/codeql-action/init@"),
   );
   expect(init?.with).toMatchObject({
     "config-file": ".github/codeql/production.yml",
-    "build-mode": "none",
+    "build-mode": "${{ matrix.language == 'swift' && 'manual' || 'none' }}",
     threads: 2,
     ram: 4096,
   });
+  const swiftBuild = job.steps.find(
+    (step) => step.name === "Build Swift helpers",
+  );
+  expect(swiftBuild?.if).toBe("matrix.language == 'swift'");
+  expect(swiftBuild?.run).toContain("bridge/native/ReaNativeUI.swift");
+  expect(swiftBuild?.run).toContain("bridge/native/NativeUIChildren.swift");
+  expect(swiftBuild?.run).toContain("bridge/native/NativeUIValues.swift");
+  expect(swiftBuild?.run).toContain(
+    "bridge/process/ProcessRunTokenReader.swift",
+  );
+  expect(swiftBuild?.run).toContain(
+    "bridge/process/ProcessRunTokenReaderMain.swift",
+  );
+  expect(job.steps.indexOf(swiftBuild!)).toBeGreaterThan(
+    job.steps.indexOf(init!),
+  );
   const analyze = job.steps.find((step) =>
-    step.uses.startsWith("github/codeql-action/analyze@"),
+    step.uses?.startsWith("github/codeql-action/analyze@"),
+  );
+  expect(job.steps.indexOf(swiftBuild!)).toBeLessThan(
+    job.steps.indexOf(analyze!),
   );
   expect(analyze?.with).toMatchObject({
     category: "/language:${{ matrix.language }}",

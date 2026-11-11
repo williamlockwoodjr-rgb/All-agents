@@ -394,18 +394,20 @@ The `paths` list retains repository-root traversal and explicitly includes
 directory. Keep directory entries here: the shared Python extractor does not
 accept individual files as traversal roots. When changing this list, compare the
 complete production file inventory as well as alert counts.
-These exclusions do not change which behavioral tests CI executes. CodeQL's
-JavaScript/TypeScript, Python, and Actions lanes do not add shell, Java, or Swift
-analysis; their existing checks remain responsible for those languages.
+These exclusions do not change which behavioral tests CI executes. The Swift
+lane manually builds both production helpers on macOS because the repository
+has no Xcode project or Swift package for CodeQL autobuild. Shell and Java
+remain covered by their existing checks rather than these CodeQL lanes.
 
 [The production workflow](https://github.com/morluto/rea/blob/main/.github/workflows/codeql.yml) is inactive until a
 repository administrator disables CodeQL **default setup** and sets the Actions
 repository variable `REA_CODEQL_ADVANCED` to `true`. Disable default setup first:
 it rejects advanced CodeQL uploads. Then enable the variable and manually run
-**CodeQL production** on `main`; verify all three analyses complete before
-relying on the new scope. While the variable is unset, the existing default
-setup continues scanning. Adding the configuration file alone does not change
-default setup in this user-owned repository.
+**CodeQL production** on `main`; verify all four analyses complete and inspect
+the Swift extraction inventory before relying on the new scope. While the
+variable is unset, the existing default setup continues scanning, and its Swift
+autobuild will fail without a project or package. Adding this workflow alone
+does not change default setup in this user-owned repository.
 
 Each analysis uses two threads and a 4096 MiB CodeQL memory budget; language
 jobs run one at a time. Complete SARIF reports are retained for seven days.
