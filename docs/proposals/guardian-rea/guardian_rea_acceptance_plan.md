@@ -39,10 +39,25 @@ packet capture, audit log excerpt, or equivalent). Untested items remain
 
 ### Stage 0 — Document and pin (this PR)
 
-| Test                                                   | Status                                                  |
-| ------------------------------------------------------ | ------------------------------------------------------- |
-| Source inventory of effects, families, routes          | Done in companion docs (source-derived)                 |
-| Pin expected tool catalog hash/count for future trials | Proposed (253 tools OBSERVED at tip; pin procedure TBD) |
+| Test                                                   | Status                                                                 |
+| ------------------------------------------------------ | ---------------------------------------------------------------------- |
+| Source inventory of effects, families, routes          | Done in companion docs (source-derived)                                |
+| Pin expected tool catalog hash/count for future trials | Procedure below; 253 tools OBSERVED at tip (count pin only until hash) |
+
+**Catalog pin procedure (for a future mock/live trial branch):**
+
+1. Check out the trial’s pinned REA tip.
+2. Build enough to load `TOOL_CONTRACTS` / `TOOL_EFFECTS` (same path the
+   `toolEffects` “audits every public tool exactly once” test uses).
+3. Emit a stable, sorted list of public tool names (one name per line) and the
+   composed effect-flag vector + TCF boolean per name.
+4. Record `sha256` of that canonical serialization next to the tip SHA in the
+   trial branch (not in this proposal-only PR).
+5. Gateway startup compares the live catalog to the pinned digest and fails
+   closed on drift (criterion A4).
+
+Until that digest exists on an implementation branch, treat the catalog pin as
+**count + tip SHA only** (253 @ `b2f3dc81f`), not a cryptographic catalog pin.
 
 ### Stage 1 — Mock-only gateway (requires owner approval of implementation plan)
 

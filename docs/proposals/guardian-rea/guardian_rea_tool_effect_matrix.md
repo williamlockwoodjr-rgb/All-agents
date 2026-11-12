@@ -16,15 +16,17 @@ L1561–1575; families L2177–2217; untrusted content L646–669), `SECURITY.md
 
 ## Guardian policy notes (not authorization)
 
-| Finding                                                                                                                                                                                                                                                                                | Class                                                                         | Consequence for Guardian                                               |
-| -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------- | ---------------------------------------------------------------------- |
-| `REA_MCP_TOOL_FAMILIES` scopes advertisement / disables out-of-scope tools; it is not caller authorization                                                                                                                                                                             | OBSERVED (`mcpToolFamilies.ts` L11–13; `EvidenceMcpServer.ts` advertisesTool) | Never authorize by family alone; use exact method names                |
-| MCP annotations (`readOnlyHint`, `destructiveHint`, …) are descriptive hints derived from effect audits                                                                                                                                                                                | OBSERVED (`mcp-contracts.md` L1561–1562; `annotationsFromEffects`)            | Do not enforce policy with annotations                                 |
-| Empty `effects()` means zero _tracked_ side-effect flags in the audit model, not “safe to expose”                                                                                                                                                                                      | OBSERVED (`toolEffects.ts` L32–44, L78)                                       | Still require separate content and ambient-access review               |
-| `get_evidence_bundle` has empty effects but is **not** target-content-free                                                                                                                                                                                                             | OBSERVED (L874; TCF set L963–971)                                             | Deny initially, or design a separate redacted review workflow          |
-| `record_unknown` is target-content-free but mutates session state                                                                                                                                                                                                                      | OBSERVED (L900; TCF)                                                          | Leave out of first allowlist                                           |
-| Candidate first-trial methods after independent gateway/isolation checks: `search_guidance`, `read_guidance_section`                                                                                                                                                                   | OBSERVED empty effects + TCF (L834–835, L963–971)                             | Exact-name allowlist only; verify handlers/ambient FS before any trial |
-| Initial deny includes (non-exhaustive): `get_evidence_bundle`, `record_unknown`, `inspect_artifact`, `extract_artifact`, `open_binary`, `execute_rizin_command`, GDB/Rizin debug, Frida, browser/Electron/process scenarios, ADB mutations, build computer, resets/exports/network ops | DERIVED from handoff + effect/content audits                                  | Individual review required before any later permit                     |
+| Finding                                                                                                                                                                                                                                                                                                                                      | Class                                                                         | Consequence for Guardian                                               |
+| -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------- | ---------------------------------------------------------------------- |
+| `REA_MCP_TOOL_FAMILIES` scopes advertisement / disables out-of-scope tools; it is not caller authorization                                                                                                                                                                                                                                   | OBSERVED (`mcpToolFamilies.ts` L11–13; `EvidenceMcpServer.ts` advertisesTool) | Never authorize by family alone; use exact method names                |
+| MCP annotations (`readOnlyHint`, `destructiveHint`, …) are descriptive hints derived from effect audits                                                                                                                                                                                                                                      | OBSERVED (`mcp-contracts.md` L1561–1562; `annotationsFromEffects`)            | Do not enforce policy with annotations                                 |
+| Empty `effects()` means zero _tracked_ side-effect flags in the audit model, not “safe to expose”                                                                                                                                                                                                                                            | OBSERVED (`toolEffects.ts` L32–44, L78)                                       | Still require separate content and ambient-access review               |
+| `get_evidence_bundle` has empty effects but is **not** target-content-free                                                                                                                                                                                                                                                                   | OBSERVED (L874; TCF set L963–971)                                             | Deny initially, or design a separate redacted review workflow          |
+| `record_unknown` is target-content-free but mutates session state                                                                                                                                                                                                                                                                            | OBSERVED (L900; TCF)                                                          | Leave out of first allowlist                                           |
+| Candidate first-trial methods after independent gateway/isolation checks: `search_guidance`, `read_guidance_section`                                                                                                                                                                                                                         | OBSERVED empty effects + TCF (L834–835, L963–971)                             | Exact-name allowlist only; verify handlers/ambient FS before any trial |
+| Other empty+TCF methods (`guided_workflows`, `inspect_analysis_settings`) deferred from first trial                                                                                                                                                                                                                                          | DERIVED (keep allowlist tiny; separate handler review still required)         | Do not widen first trial by “also empty+TCF” alone                     |
+| TCF ≠ permit: `export_evidence_bundle` writes FS / may discard; `update_analysis_settings` / `record_unknown` mutate session                                                                                                                                                                                                                 | OBSERVED (L81, L870–873, L900; TCF set L963–971)                              | Never authorize from TCF or empty-effects bits alone                   |
+| Initial deny includes (non-exhaustive): `get_evidence_bundle`, `record_unknown`, `update_analysis_settings`, `export_evidence_bundle`, `inspect_artifact`, `extract_artifact`, `open_binary`, `execute_rizin_command`, GDB/Rizin debug, Frida, browser/Electron/process scenarios, ADB mutations, build computer, resets/exports/network ops | DERIVED from handoff + effect/content audits                                  | Individual review required before any later permit                     |
 
 ## Effect model
 
@@ -69,61 +71,72 @@ provider-composed entries, session base ∪ global provider possibilities.
 
 ## TARGET_CONTENT_FREE_TOOLS (complete list)
 
-Source: `toolEffects.ts:963–971`. Documented in `mcp-contracts.md:663–669`.
+Source: `toolEffects.ts:963–971` (set insertion order). Documented in
+`mcp-contracts.md:663–669`.
 
 |   # | Tool                        |
 | --: | --------------------------- |
-|   1 | `export_evidence_bundle`    |
-|   2 | `guided_workflows`          |
-|   3 | `inspect_analysis_settings` |
-|   4 | `read_guidance_section`     |
-|   5 | `record_unknown`            |
-|   6 | `search_guidance`           |
-|   7 | `update_analysis_settings`  |
+|   1 | `inspect_analysis_settings` |
+|   2 | `update_analysis_settings`  |
+|   3 | `export_evidence_bundle`    |
+|   4 | `search_guidance`           |
+|   5 | `read_guidance_section`     |
+|   6 | `guided_workflows`          |
+|   7 | `record_unknown`            |
 
 All other tools: `returnsTargetContent: true` / `toolReturnsTargetContent(name) === true`.
+
+**Guardian note:** TCF only means results are not marked as target-derived text.
+It does **not** mean zero side effects or safe to allowlist. See special-attention
+rows for `export_evidence_bundle`, `update_analysis_settings`, and
+`record_unknown`.
 
 ## REA_MCP_TOOL_FAMILIES mapping
 
 `REA_MCP_TOOL_FAMILIES` = comma-separated subset of `TOOL_FAMILY_IDS`
 (`toolFamilyIds.ts:8–27`). Ownership: `TOOL_FAMILY_DEFINITIONS`
-(`toolFamilies.ts:120–251`). Unset ⇒ full catalog.
+(`toolFamilies.ts:120–251`). Unset ⇒ full catalog. Per-method membership is in
+the inventory sections below (not repeated here).
 
-| Family id (`TOOL_FAMILY_IDS` order) | Surface                    | Count | Tools (canonical ownership) |
-| ----------------------------------- | -------------------------- | ----: | --------------------------- |
-| `direct`                            | `official-proxy`           |    41 | ...                         |
-| `enhanced`                          | `enhanced`                 |    15 | ...                         |
-| `native`                            | `native-provider`          |    37 | ...                         |
-| `artifact`                          | `artifact-provider`        |    24 | ...                         |
-| `managed`                           | `managed`                  |     7 | ...                         |
-| `firmware`                          | `firmware-provider`        |     2 | ...                         |
-| `android`                           | `android-provider`         |     6 | ...                         |
-| `pcap`                              | `pcap-provider`            |     2 | ...                         |
-| `flutter`                           | `flutter-provider`         |     2 | ...                         |
-| `frida`                             | `instrumentation-provider` |     9 | ...                         |
-| `apktool`                           | `apktool-provider`         |     2 | ...                         |
-| `jeb`                               | `jeb-provider`             |     4 | ...                         |
-| `adb`                               | `adb-provider`             |    24 | ...                         |
-| `browser`                           | `browser-provider`         |    12 | ...                         |
-| `electron`                          | `electron-provider`        |     6 | ...                         |
-| `javascript-runtime`                | `runtime-provider`         |     2 | ...                         |
-| `application`                       | `application-workflow`     |    34 | ...                         |
-| `session`                           | `session`                  |    24 | ...                         |
+| Family id (`TOOL_FAMILY_IDS` order) | Surface                    | Count |
+| ----------------------------------- | -------------------------- | ----: |
+| `direct`                            | `official-proxy`           |    41 |
+| `enhanced`                          | `enhanced`                 |    15 |
+| `native`                            | `native-provider`          |    37 |
+| `artifact`                          | `artifact-provider`        |    24 |
+| `managed`                           | `managed`                  |     7 |
+| `firmware`                          | `firmware-provider`        |     2 |
+| `android`                           | `android-provider`         |     6 |
+| `pcap`                              | `pcap-provider`            |     2 |
+| `flutter`                           | `flutter-provider`         |     2 |
+| `frida`                             | `instrumentation-provider` |     9 |
+| `apktool`                           | `apktool-provider`         |     2 |
+| `jeb`                               | `jeb-provider`             |     4 |
+| `adb`                               | `adb-provider`             |    24 |
+| `browser`                           | `browser-provider`         |    12 |
+| `electron`                          | `electron-provider`        |     6 |
+| `javascript-runtime`                | `runtime-provider`         |     2 |
+| `application`                       | `application-workflow`     |    34 |
+| `session`                           | `session`                  |    24 |
 
 **Total: 253 tools** across 18 families.
 
 ## Special-attention tools
 
-| Method                  | Family        | Side-effect flags (true)                                                                                               | TCF   | Empty `effects()`? | readOnly | destructive | idempotent | openWorld | Source lines       | Notes                                                                                                                                         |
-| ----------------------- | ------------- | ---------------------------------------------------------------------------------------------------------------------- | ----- | ------------------ | -------- | ----------- | ---------- | --------- | ------------------ | --------------------------------------------------------------------------------------------------------------------------------------------- |
-| `get_evidence_bundle`   | `session`     | _(none)_                                                                                                               | false | true               | True     | False       | True       | False     | toolEffects.ts:874 | Audited `effects()` → zero tracked side effects; NOT TCF (can surface retained Evidence / target text). Contract: sessionToolContracts ~L175. |
-| `record_unknown`        | `session`     | mutatesSession                                                                                                         | true  | false              | False    | False       | False      | False     | toolEffects.ts:900 | `mutatesSession` + non-idempotent; IS TCF (REA-authored unknown ledger).                                                                      |
-| `inspect_artifact`      | `artifact`    | mutatesSession, writesFilesystem, launchesProcess                                                                      | false | false              | False    | False       | True       | True      | toolEffects.ts:670 | SES+PROC+FS; inventory Evidence (target content). artifactToolContracts L111–115.                                                             |
-| `extract_artifact`      | `artifact`    | mutatesSession, writesFilesystem, launchesProcess                                                                      | false | false              | False    | False       | False      | True      | toolEffects.ts:675 | SES+FS+PROC, non-idempotent; writes output_root/temp. artifactToolContracts L117–120.                                                         |
-| `open_binary`           | `session`     | mutatesSession, launchesProcess, accessesNetwork                                                                       | false | false              | False    | False       | True       | True      | toolEffects.ts:846 | SES+PROC+NET; opens/binds provider. sessionToolContracts L70.                                                                                 |
-| `search_guidance`       | `application` | _(none)_                                                                                                               | true  | true               | True     | False       | True       | False     | toolEffects.ts:834 | Empty effects; TCF; REA-authored docs only. applicationToolContracts L100.                                                                    |
-| `read_guidance_section` | `application` | _(none)_                                                                                                               | true  | true               | True     | False       | True       | False     | toolEffects.ts:835 | Empty effects; TCF. applicationToolContracts L138.                                                                                            |
-| `execute_rizin_command` | `native`      | mutatesTarget, mutatesSession, writesFilesystem, launchesProcess, accessesNetwork, mayDiscardData, executesForeignCode | false | false              | False    | True        | False      | True      | toolEffects.ts:147 | TGT+SES+FS+PROC+NET+DISC+FOREIGN; destructiveHint. reverseEngineeringToolContracts L38.                                                       |
+| Method                      | Family        | Side-effect flags (true)                                                                                               | TCF   | Empty `effects()`? | readOnly | destructive | idempotent | openWorld | Source lines       | Notes                                                                                                                                         |
+| --------------------------- | ------------- | ---------------------------------------------------------------------------------------------------------------------- | ----- | ------------------ | -------- | ----------- | ---------- | --------- | ------------------ | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| `get_evidence_bundle`       | `session`     | _(none)_                                                                                                               | false | true               | True     | False       | True       | False     | toolEffects.ts:874 | Audited `effects()` → zero tracked side effects; NOT TCF (can surface retained Evidence / target text). Contract: sessionToolContracts ~L175. |
+| `record_unknown`            | `session`     | mutatesSession                                                                                                         | true  | false              | False    | False       | False      | False     | toolEffects.ts:900 | `mutatesSession` + non-idempotent; IS TCF (REA-authored unknown ledger).                                                                      |
+| `update_analysis_settings`  | `application` | mutatesSession                                                                                                         | true  | false              | False    | False       | True       | False     | toolEffects.ts:81  | TCF but mutates session settings; out of first allowlist.                                                                                     |
+| `export_evidence_bundle`    | `session`     | writesFilesystem, mayDiscardData                                                                                       | true  | false              | False    | True        | True       | False     | toolEffects.ts:870 | TCF but writes/exports and may discard; never treat TCF as permit.                                                                            |
+| `inspect_artifact`          | `artifact`    | mutatesSession, writesFilesystem, launchesProcess                                                                      | false | false              | False    | False       | True       | True      | toolEffects.ts:670 | SES+PROC+FS; inventory Evidence (target content). artifactToolContracts L111–115.                                                             |
+| `extract_artifact`          | `artifact`    | mutatesSession, writesFilesystem, launchesProcess                                                                      | false | false              | False    | False       | False      | True      | toolEffects.ts:675 | SES+FS+PROC, non-idempotent; writes output_root/temp. artifactToolContracts L117–120.                                                         |
+| `open_binary`               | `session`     | mutatesSession, launchesProcess, accessesNetwork                                                                       | false | false              | False    | False       | True       | True      | toolEffects.ts:846 | SES+PROC+NET; opens/binds provider. sessionToolContracts L70.                                                                                 |
+| `search_guidance`           | `application` | _(none)_                                                                                                               | true  | true               | True     | False       | True       | False     | toolEffects.ts:834 | Empty effects; TCF; REA-authored docs only. First-trial candidate only after handler/ambient-FS check.                                        |
+| `read_guidance_section`     | `application` | _(none)_                                                                                                               | true  | true               | True     | False       | True       | False     | toolEffects.ts:835 | Empty effects; TCF. First-trial candidate with bounded section id/length.                                                                     |
+| `guided_workflows`          | `application` | _(none)_                                                                                                               | true  | true               | True     | False       | True       | False     | toolEffects.ts:836 | Empty+TCF like guidance tools, but deferred: broader workflow text surface; verify separately before any permit.                              |
+| `inspect_analysis_settings` | `application` | _(none)_                                                                                                               | true  | true               | True     | False       | True       | False     | toolEffects.ts:80  | Empty+TCF; deferred from first trial to keep the initial allowlist guidance-only and tiny.                                                    |
+| `execute_rizin_command`     | `native`      | mutatesTarget, mutatesSession, writesFilesystem, launchesProcess, accessesNetwork, mayDiscardData, executesForeignCode | false | false              | False    | True        | False      | True      | toolEffects.ts:147 | TGT+SES+FS+PROC+NET+DISC+FOREIGN; destructiveHint. reverseEngineeringToolContracts L38.                                                       |
 
 ## All tools with empty `effects()`
 

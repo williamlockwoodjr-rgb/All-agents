@@ -23,11 +23,13 @@ changes, or host credential use.
 ## Why NO-GO now (source-derived)
 
 REA runs with host authority and is not a sandbox (`SECURITY.md`). Tool families
-and MCP annotations are exposure/hints, not authorization. Several “static” tools
-can launch helpers, write files, or return sensitive Evidence. Alternate routes
-(CLI, HTTP MCP, environment-serve, deep imports) bypass a stdio-only proxy.
-Therefore Agent 007 must not call REA until an **external** gateway and
-**OS-enforced** isolation exist and pass denial tests.
+and MCP annotations are exposure/hints, not authorization. Target-content-free
+(TCF) also does not mean safe: e.g. `export_evidence_bundle` is TCF yet writes
+filesystem and may discard data. Several “static” tools can launch helpers, write
+files, or return sensitive Evidence. Alternate routes (CLI, HTTP MCP,
+environment-serve, deep imports) bypass a stdio-only proxy. Therefore Agent 007
+must not call REA until an **external** gateway and **OS-enforced** isolation
+exist and pass denial tests.
 
 ## What this review delivered
 
