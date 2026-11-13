@@ -320,41 +320,47 @@ it.each(
 it.each(["json", "jsonl"] as const)(
   "counts the normalized filtered %s records",
   async (format) => {
-    const cli = Cli.create("filtered-count-test", { sync: false });
-    cli.command("rows", { run: () => source });
-    const args = [
-      "rows",
-      "--format",
-      format,
-      "--filter-output",
-      "selected",
-      "--token-count",
-    ];
-    const chunks: Buffer[] = [];
-    const output = createCliResultOutput(
-      parseCliOutputArguments(args),
-      new Writable({
-        write(chunk: Buffer, _encoding, callback) {
-          chunks.push(chunk);
-          callback();
+    const render = async (tokenCount: boolean): Promise<string> => {
+      const cli = Cli.create("filtered-count-test", { sync: false });
+      cli.command("rows", { run: () => source });
+      const args = [
+        "rows",
+        "--format",
+        format,
+        "--filter-output",
+        "selected",
+        ...(tokenCount ? ["--token-count"] : []),
+      ];
+      const chunks: Buffer[] = [];
+      const output = createCliResultOutput(
+        parseCliOutputArguments(args),
+        new Writable({
+          write(chunk: Buffer, _encoding, callback) {
+            chunks.push(chunk);
+            callback();
+          },
+        }),
+      );
+      if (output === undefined) throw new Error("Missing CLI output owner");
+      streamCliCommandResults(cli, output);
+      let fallback = "";
+      await cli.serve(args, {
+        exit: (code) => {
+          expect(code).toBe(0);
         },
-      }),
-    );
-    if (output === undefined) throw new Error("Missing CLI output owner");
-    streamCliCommandResults(cli, output);
-    let fallback = "";
-    await cli.serve(args, {
-      exit: (code) => {
-        expect(code).toBe(0);
-      },
-      stdout: (text) => {
-        if (!output.handled) fallback += text;
-      },
-    });
-    expect(Buffer.concat(chunks).toString()).toBe(
-      `${estimateTokenCount(Formatter.format([1, null, null], format))}\n`,
-    );
-    expect(fallback).toBe("");
+        stdout: (text) => {
+          if (!output.handled) fallback += text;
+        },
+      });
+      expect(fallback).toBe("");
+      expect(output.handled).toBe(true);
+      return Buffer.concat(chunks).toString("utf8");
+    };
+    // Count the bytes the command emits. Incur's Formatter is not that
+    // document: piped JSON is compact, and JSONL keeps each record's newline.
+    // tokenx 2 prices a line break after a word, so those differences count.
+    const emitted = await render(false);
+    expect(await render(true)).toBe(`${estimateTokenCount(emitted)}\n`);
   },
 );
 
