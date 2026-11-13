@@ -10,7 +10,7 @@
 Choose one:
 
 1. **Defer** — keep NO-GO; no gateway implementation.
-2. **Approve mock-only plan** — authorize a *separate* implementation plan/PR for a
+2. **Approve mock-only plan** — authorize a _separate_ implementation plan/PR for a
    Guardian gateway that talks to a **mocked** REA endpoint, with Stage 1
    negative-path tests from `guardian_rea_acceptance_plan.md`.
 3. **Reject proposal framing** — require revision of the design artifacts before any
@@ -23,20 +23,22 @@ changes, or host credential use.
 ## Why NO-GO now (source-derived)
 
 REA runs with host authority and is not a sandbox (`SECURITY.md`). Tool families
-and MCP annotations are exposure/hints, not authorization. Several “static” tools
-can launch helpers, write files, or return sensitive Evidence. Alternate routes
-(CLI, HTTP MCP, environment-serve, deep imports) bypass a stdio-only proxy.
-Therefore Agent 007 must not call REA until an **external** gateway and
-**OS-enforced** isolation exist and pass denial tests.
+and MCP annotations are exposure/hints, not authorization. Target-content-free
+(TCF) also does not mean safe: e.g. `export_evidence_bundle` is TCF yet writes
+filesystem and may discard data. Several “static” tools can launch helpers, write
+files, or return sensitive Evidence. Alternate routes (CLI, HTTP MCP,
+environment-serve, deep imports) bypass a stdio-only proxy. Therefore Agent 007
+must not call REA until an **external** gateway and **OS-enforced** isolation
+exist and pass denial tests.
 
 ## What this review delivered
 
-| Artifact | Role |
-| --- | --- |
-| `guardian_rea_gateway_design_review.md` | External gateway design + threat model |
-| `guardian_rea_tool_effect_matrix.md` | 253-tool effect/content inventory with citations |
-| `guardian_rea_acceptance_plan.md` | Unexecuted acceptance criteria and staged tests |
-| This memo | Decision gate |
+| Artifact                                | Role                                             |
+| --------------------------------------- | ------------------------------------------------ |
+| `guardian_rea_gateway_design_review.md` | External gateway design + threat model           |
+| `guardian_rea_tool_effect_matrix.md`    | 253-tool effect/content inventory with citations |
+| `guardian_rea_acceptance_plan.md`       | Unexecuted acceptance criteria and staged tests  |
+| This memo                               | Decision gate                                    |
 
 **Not delivered / not claimed:** implemented gateway, executed security tests,
 CVSS scores, exploit PoCs, or live REA behavior measurements.

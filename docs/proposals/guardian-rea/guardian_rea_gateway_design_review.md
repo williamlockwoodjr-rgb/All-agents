@@ -24,45 +24,45 @@ the upstream Grok review are planning priorities, not CVSS scores.
 
 ## 2. Evidence classes
 
-| Class | Meaning |
-| --- | --- |
+| Class    | Meaning                                        |
+| -------- | ---------------------------------------------- |
 | OBSERVED | Cited statement or code path at the pinned tip |
-| DERIVED | Direct consequence of OBSERVED facts |
+| DERIVED  | Direct consequence of OBSERVED facts           |
 | INFERRED | Plausible from architecture; not executed here |
-| UNKNOWN | Not established from this review |
+| UNKNOWN  | Not established from this review               |
 
 ## 3. Verified baseline (OBSERVED)
 
-| Item | Evidence | Consequence |
-| --- | --- | --- |
-| REA is not an authorization/sandbox boundary | `SECURITY.md` Security boundary, Threat model | Enforce policy outside REA |
-| Trusted authority is OS account + caller/agent host + configured providers | `SECURITY.md` Threat model | Gateway + host must own approvals |
-| Target/provider text is untrusted data | `SECURITY.md`; `toolEffects.ts` L951–978; `mcp-contracts.md` Untrusted target content | Never translate Evidence into command authority |
-| `REA_MCP_TOOL_FAMILIES` is exposure/advertisement scoping | `mcpToolFamilies.ts` L11–13; `toolFamilies.ts` `contractsForToolFamilies`; server `advertisesTool` / `disable()` | Never authorize by family |
-| Tool annotations are hints | `mcp-contracts.md` L1561–1574; `annotationsFromEffects` | Do not enforce with `readOnlyHint` / `destructiveHint` |
-| `inspect_artifact` can mutate session, write FS, launch processes | `toolEffects.ts` L670–674; `artifactToolContracts.ts` (DMG mount / inventory) | Not a zero-effect static whitelist |
-| `open_binary` can launch providers and use network | `toolEffects.ts` L846–850 | Deny in first phase |
-| HTTP MCP lacks TLS/client authentication | `SECURITY.md`; streamable HTTP `/mcp` | Do not expose; prefer stdio inside isolation |
-| Evidence can retain sensitive target data | `SECURITY.md` Limits; artifact contracts | Output protection / redaction / publication controls |
-| `get_evidence_bundle` empty effects ≠ target-content-free | `toolEffects.ts` L874 vs L963–971 | Deny initially |
-| `record_unknown` mutates session despite TCF | `toolEffects.ts` L900 | Out of first allowlist |
+| Item                                                                       | Evidence                                                                                                         | Consequence                                            |
+| -------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------ |
+| REA is not an authorization/sandbox boundary                               | `SECURITY.md` Security boundary, Threat model                                                                    | Enforce policy outside REA                             |
+| Trusted authority is OS account + caller/agent host + configured providers | `SECURITY.md` Threat model                                                                                       | Gateway + host must own approvals                      |
+| Target/provider text is untrusted data                                     | `SECURITY.md`; `toolEffects.ts` L951–978; `mcp-contracts.md` Untrusted target content                            | Never translate Evidence into command authority        |
+| `REA_MCP_TOOL_FAMILIES` is exposure/advertisement scoping                  | `mcpToolFamilies.ts` L11–13; `toolFamilies.ts` `contractsForToolFamilies`; server `advertisesTool` / `disable()` | Never authorize by family                              |
+| Tool annotations are hints                                                 | `mcp-contracts.md` L1561–1574; `annotationsFromEffects`                                                          | Do not enforce with `readOnlyHint` / `destructiveHint` |
+| `inspect_artifact` can mutate session, write FS, launch processes          | `toolEffects.ts` L670–674; `artifactToolContracts.ts` (DMG mount / inventory)                                    | Not a zero-effect static whitelist                     |
+| `open_binary` can launch providers and use network                         | `toolEffects.ts` L846–850                                                                                        | Deny in first phase                                    |
+| HTTP MCP lacks TLS/client authentication                                   | `SECURITY.md`; streamable HTTP `/mcp`                                                                            | Do not expose; prefer stdio inside isolation           |
+| Evidence can retain sensitive target data                                  | `SECURITY.md` Limits; artifact contracts                                                                         | Output protection / redaction / publication controls   |
+| `get_evidence_bundle` empty effects ≠ target-content-free                  | `toolEffects.ts` L874 vs L963–971                                                                                | Deny initially                                         |
+| `record_unknown` mutates session despite TCF                               | `toolEffects.ts` L900                                                                                            | Out of first allowlist                                 |
 
 ## 4. Invocation-route inventory (gateway must close)
 
 A Guardian that only proxies one MCP stdio pipe does **not** cover REA’s
 reachable surface.
 
-| Route | How reached | Bypass risk if gateway is stdio-only | Class |
-| --- | --- | --- | --- |
-| `rea` / `rea-agents` CLI | `package.json` bin → `scripts/rea.mjs` | High — same workflows without MCP | OBSERVED |
-| `rea mcp` / `--mcp` stdio | `dist/mcp/main.js` `runEntrypoint` | Medium — second server outside gateway | OBSERVED |
-| `rea mcp --http` streamable HTTP `/mcp` | No TLS; Host/Origin allowlist only | High | OBSERVED |
-| `rea environment-serve` | HTTP MCP + `/.well-known/agent-env.json` + `/agentenv` | High | OBSERVED |
-| Plugin launchers / `npm start` | Spawn `rea.mjs mcp` | High if agents can spawn outside gateway | OBSERVED |
-| Deep `dist/` imports (`createServer`, `run`, CLI analysis) | Package ships `dist/`; no public `exports` lock observed | High if Node can import published files | OBSERVED / INFERRED |
-| `rea setup` / `install.sh` / `mcp add` / update / uninstall | Host + client config mutation | High | OBSERVED |
-| Provider children (Hopper, Ghidra, GDB, Rizin, Frida, …) | Spawned after admitted entry | Privilege/side-effect after admission | OBSERVED |
-| Outbound IDA/JEB MCP, Cutter TCP, CDP inspector URLs | REA as client | Network reach from REA process | OBSERVED |
+| Route                                                       | How reached                                              | Bypass risk if gateway is stdio-only     | Class               |
+| ----------------------------------------------------------- | -------------------------------------------------------- | ---------------------------------------- | ------------------- |
+| `rea` / `rea-agents` CLI                                    | `package.json` bin → `scripts/rea.mjs`                   | High — same workflows without MCP        | OBSERVED            |
+| `rea mcp` / `--mcp` stdio                                   | `dist/mcp/main.js` `runEntrypoint`                       | Medium — second server outside gateway   | OBSERVED            |
+| `rea mcp --http` streamable HTTP `/mcp`                     | No TLS; Host/Origin allowlist only                       | High                                     | OBSERVED            |
+| `rea environment-serve`                                     | HTTP MCP + `/.well-known/agent-env.json` + `/agentenv`   | High                                     | OBSERVED            |
+| Plugin launchers / `npm start`                              | Spawn `rea.mjs mcp`                                      | High if agents can spawn outside gateway | OBSERVED            |
+| Deep `dist/` imports (`createServer`, `run`, CLI analysis)  | Package ships `dist/`; no public `exports` lock observed | High if Node can import published files  | OBSERVED / INFERRED |
+| `rea setup` / `install.sh` / `mcp add` / update / uninstall | Host + client config mutation                            | High                                     | OBSERVED            |
+| Provider children (Hopper, Ghidra, GDB, Rizin, Frida, …)    | Spawned after admitted entry                             | Privilege/side-effect after admission    | OBSERVED            |
+| Outbound IDA/JEB MCP, Cutter TCP, CDP inspector URLs        | REA as client                                            | Network reach from REA process           | OBSERVED            |
 
 **DERIVED requirement:** rejections must occur **before** REA receives a request,
 and non-gateway routes must be unavailable inside the isolation boundary (no CLI
@@ -103,16 +103,23 @@ Guardian tool gateway — EXACT tool-name allowlist + typed argument validation
 
 After gateway + isolation are independently checked, candidate first methods:
 
-| Method | Why candidate | Required pre-trial verification | Initial decision |
-| --- | --- | --- | --- |
-| `search_guidance` | Empty effects + target-content-free | Handler path, response content, ambient filesystem | Possible exact-name permit |
-| `read_guidance_section` | Same | Same + bounded section id / length args | Possible exact-name permit |
+| Method                  | Why candidate                       | Required pre-trial verification                    | Initial decision           |
+| ----------------------- | ----------------------------------- | -------------------------------------------------- | -------------------------- |
+| `search_guidance`       | Empty effects + target-content-free | Handler path, response content, ambient filesystem | Possible exact-name permit |
+| `read_guidance_section` | Same                                | Same + bounded section id / length args            | Possible exact-name permit |
+
+Other empty-effect + TCF methods (`guided_workflows`, `inspect_analysis_settings`)
+are **intentionally deferred**: keep the first trial allowlist tiny and
+guidance-query shaped; each still needs its own handler/ambient-FS review before
+any later permit. TCF methods with side effects (`export_evidence_bundle`,
+`update_analysis_settings`, `record_unknown`) are not candidates.
 
 **Denied initially (non-exhaustive):** `get_evidence_bundle`, `record_unknown`,
-`inspect_artifact`, `extract_artifact`, `open_binary`, `execute_rizin_command`,
-GDB/Rizin debug commands, Frida script execution, browser/Electron/process
-scenarios, Android device mutations, build computers, resets, exports, network
-operations, and every other method unless individually reviewed and approved.
+`update_analysis_settings`, `export_evidence_bundle`, `inspect_artifact`,
+`extract_artifact`, `open_binary`, `execute_rizin_command`, GDB/Rizin debug
+commands, Frida script execution, browser/Electron/process scenarios, Android
+device mutations, build computers, resets, exports, network operations, and every
+other method unless individually reviewed and approved.
 
 Do **not** allow by family (`application`, `session`, …).
 
@@ -128,14 +135,14 @@ Do **not** allow by family (`application`, `session`, …).
 
 ### 5.4 Identity and isolation (OS-enforced)
 
-| Control | Requirement | Enforcer |
-| --- | --- | --- |
-| Separate OS identity | Dedicated UID/GID or VM user; not the analyst/host agent account | OS / orchestrator |
-| Filesystem | RO fixtures; RW only scratch + output; no host home/secrets/keys | mount namespaces / ACL / VM disks |
-| Network | Deny-all egress by default; no HTTP MCP bind | netns / firewall / VM |
-| Process | No host `rea` CLI on agent PATH; only gateway-spawned stdio child | image contents + exec policy |
-| Resources | CPU, memory, disk quota, PIDs, wall-clock on the **process tree** | cgroups / ulimit / hypervisor |
-| Credentials | No ambient cloud/Git tokens, no publisher keys, no host MCP secrets | empty env + no mounts |
+| Control              | Requirement                                                         | Enforcer                          |
+| -------------------- | ------------------------------------------------------------------- | --------------------------------- |
+| Separate OS identity | Dedicated UID/GID or VM user; not the analyst/host agent account    | OS / orchestrator                 |
+| Filesystem           | RO fixtures; RW only scratch + output; no host home/secrets/keys    | mount namespaces / ACL / VM disks |
+| Network              | Deny-all egress by default; no HTTP MCP bind                        | netns / firewall / VM             |
+| Process              | No host `rea` CLI on agent PATH; only gateway-spawned stdio child   | image contents + exec policy      |
+| Resources            | CPU, memory, disk quota, PIDs, wall-clock on the **process tree**   | cgroups / ulimit / hypervisor     |
+| Credentials          | No ambient cloud/Git tokens, no publisher keys, no host MCP secrets | empty env + no mounts             |
 
 REA config strings (`REA_MCP_TOOL_FAMILIES`, etc.) may reduce advertisement but
 **do not** replace these controls (`SECURITY.md` Host isolation / Resource
@@ -174,18 +181,18 @@ UNKNOWN/failed:
 
 ## 6. Threat model (proposal)
 
-| Threat | Trusted? | Residual if gateway+isolation missing | Mitigation owner |
-| --- | --- | --- | --- |
-| Agent asks for denied tool | Agent not authority | Call reaches REA | Gateway exact-name deny |
-| Prompt injection via target/Evidence text | Untrusted data | Agent escalates to CLI/shell | Treat results as data; no command translation; deny high-effect tools |
-| Family / annotation confusion | Hints only | Over-permit | Exact names + typed args |
-| CLI / HTTP MCP / environment-serve bypass | Alternate routes | Sidestep gateway | Remove routes from isolation image; block binds |
-| Symlink / path traversal / special files | Hostile fixtures | Escape RO roots | OS + gateway path policy |
-| Provider subprocess effects | Trusted once launched | Network, FS, foreign code | Deny those tools initially; later per-tool review + OS limits |
-| Output leakage / Evidence publication | Sensitive retained data | Host/agent exfil | Redaction, output quarantine, deny `get_evidence_bundle` initially |
-| Resource exhaustion | No universal REA hard caps | Host DoS | External cgroup/VM limits on process tree |
-| Cancellation ambiguity | Partial results | False “clean” conclusion | Explicit UNKNOWN/UNAVAILABLE |
-| Catalog drift / new tool registration | Evolving surface | Silent new capability | Startup catalog pin + fail closed |
+| Threat                                    | Trusted?                   | Residual if gateway+isolation missing | Mitigation owner                                                      |
+| ----------------------------------------- | -------------------------- | ------------------------------------- | --------------------------------------------------------------------- |
+| Agent asks for denied tool                | Agent not authority        | Call reaches REA                      | Gateway exact-name deny                                               |
+| Prompt injection via target/Evidence text | Untrusted data             | Agent escalates to CLI/shell          | Treat results as data; no command translation; deny high-effect tools |
+| Family / annotation confusion             | Hints only                 | Over-permit                           | Exact names + typed args                                              |
+| CLI / HTTP MCP / environment-serve bypass | Alternate routes           | Sidestep gateway                      | Remove routes from isolation image; block binds                       |
+| Symlink / path traversal / special files  | Hostile fixtures           | Escape RO roots                       | OS + gateway path policy                                              |
+| Provider subprocess effects               | Trusted once launched      | Network, FS, foreign code             | Deny those tools initially; later per-tool review + OS limits         |
+| Output leakage / Evidence publication     | Sensitive retained data    | Host/agent exfil                      | Redaction, output quarantine, deny `get_evidence_bundle` initially    |
+| Resource exhaustion                       | No universal REA hard caps | Host DoS                              | External cgroup/VM limits on process tree                             |
+| Cancellation ambiguity                    | Partial results            | False “clean” conclusion              | Explicit UNKNOWN/UNAVAILABLE                                          |
+| Catalog drift / new tool registration     | Evolving surface           | Silent new capability                 | Startup catalog pin + fail closed                                     |
 
 **UNKNOWN without execution:** concrete handler ambient FS for guidance tools;
 full symlink race windows against every provider helper; measured egress from
