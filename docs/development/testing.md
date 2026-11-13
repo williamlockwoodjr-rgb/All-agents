@@ -394,9 +394,10 @@ The `paths` list retains repository-root traversal and explicitly includes
 directory. Keep directory entries here: the shared Python extractor does not
 accept individual files as traversal roots. When changing this list, compare the
 complete production file inventory as well as alert counts.
-These exclusions do not change which behavioral tests CI executes. CodeQL's
-JavaScript/TypeScript, Python, and Actions lanes do not add shell, Java, or Swift
-analysis; their existing checks remain responsible for those languages.
+These exclusions do not change which behavioral tests CI executes. The Swift
+lane manually builds both production helpers on macOS because the repository
+has no Xcode project or Swift package for CodeQL autobuild. Shell and Java
+remain covered by their existing checks rather than these CodeQL lanes.
 
 [The production workflow](https://github.com/morluto/rea/blob/main/.github/workflows/codeql.yml) is inactive until an administrator replaces CodeQL **default setup** with this advanced workflow. To activate it:
 
@@ -410,13 +411,14 @@ analysis; their existing checks remain responsible for those languages.
 3. In **Settings → Secrets and variables → Actions → Variables**, create the
    repository variable `REA_CODEQL_ADVANCED` with value `true`.
 4. In **Actions**, run **CodeQL production** on `main`. Verify the JavaScript/
-   TypeScript, Python, and Actions analyses complete and upload their results
-   before relying on the advanced setup.
+   TypeScript, Python, Actions, and Swift analyses complete and upload their
+   results, and inspect the Swift extraction inventory, before relying on the
+   advanced setup.
 
 Disable default setup before enabling the workflow: it rejects advanced CodeQL
 uploads. Until an administrator completes the switch, default setup continues
-scanning and may keep failing its Swift autobuild because this repository has no
-Swift package or Xcode project. Adding the workflow or configuration alone does
+scanning and its Swift autobuild fails because this repository has no Swift
+package or Xcode project. Adding the workflow or configuration alone does
 not change the repository's active setup.
 
 Each analysis uses two threads and a 4096 MiB CodeQL memory budget; language
