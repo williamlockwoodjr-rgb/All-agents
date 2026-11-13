@@ -108,11 +108,18 @@ After gateway + isolation are independently checked, candidate first methods:
 | `search_guidance`       | Empty effects + target-content-free | Handler path, response content, ambient filesystem | Possible exact-name permit |
 | `read_guidance_section` | Same                                | Same + bounded section id / length args            | Possible exact-name permit |
 
+Other empty-effect + TCF methods (`guided_workflows`, `inspect_analysis_settings`)
+are **intentionally deferred**: keep the first trial allowlist tiny and
+guidance-query shaped; each still needs its own handler/ambient-FS review before
+any later permit. TCF methods with side effects (`export_evidence_bundle`,
+`update_analysis_settings`, `record_unknown`) are not candidates.
+
 **Denied initially (non-exhaustive):** `get_evidence_bundle`, `record_unknown`,
-`inspect_artifact`, `extract_artifact`, `open_binary`, `execute_rizin_command`,
-GDB/Rizin debug commands, Frida script execution, browser/Electron/process
-scenarios, Android device mutations, build computers, resets, exports, network
-operations, and every other method unless individually reviewed and approved.
+`update_analysis_settings`, `export_evidence_bundle`, `inspect_artifact`,
+`extract_artifact`, `open_binary`, `execute_rizin_command`, GDB/Rizin debug
+commands, Frida script execution, browser/Electron/process scenarios, Android
+device mutations, build computers, resets, exports, network operations, and every
+other method unless individually reviewed and approved.
 
 Do **not** allow by family (`application`, `session`, …).
 
