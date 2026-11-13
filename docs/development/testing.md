@@ -399,15 +399,27 @@ lane manually builds both production helpers on macOS because the repository
 has no Xcode project or Swift package for CodeQL autobuild. Shell and Java
 remain covered by their existing checks rather than these CodeQL lanes.
 
-[The production workflow](https://github.com/morluto/rea/blob/main/.github/workflows/codeql.yml) is inactive until a
-repository administrator disables CodeQL **default setup** and sets the Actions
-repository variable `REA_CODEQL_ADVANCED` to `true`. Disable default setup first:
-it rejects advanced CodeQL uploads. Then enable the variable and manually run
-**CodeQL production** on `main`; verify all four analyses complete and inspect
-the Swift extraction inventory before relying on the new scope. While the
-variable is unset, the existing default setup continues scanning, and its Swift
-autobuild will fail without a project or package. Adding this workflow alone
-does not change default setup in this user-owned repository.
+[The production workflow](https://github.com/morluto/rea/blob/main/.github/workflows/codeql.yml) is inactive until an administrator replaces CodeQL **default setup** with this advanced workflow. To activate it:
+
+1. Ensure `.github/workflows/codeql.yml` and `.github/codeql/production.yml` are on
+   `main`.
+2. In repository **Settings**, open **Security and quality** (or **Code security
+   and analysis**) and find **CodeQL analysis**. Choose **Switch to advanced** and
+   confirm disabling default setup. Follow [GitHub's advanced-setup instructions](https://docs.github.com/en/code-security/how-tos/find-and-fix-code-vulnerabilities/configure-code-scanning/configuring-advanced-setup-for-code-scanning).
+   If organization policy manages this setting, an organization administrator
+   must perform or permit the change.
+3. In **Settings → Secrets and variables → Actions → Variables**, create the
+   repository variable `REA_CODEQL_ADVANCED` with value `true`.
+4. In **Actions**, run **CodeQL production** on `main`. Verify the JavaScript/
+   TypeScript, Python, Actions, and Swift analyses complete and upload their
+   results, and inspect the Swift extraction inventory, before relying on the
+   advanced setup.
+
+Disable default setup before enabling the workflow: it rejects advanced CodeQL
+uploads. Until an administrator completes the switch, default setup continues
+scanning and its Swift autobuild fails because this repository has no Swift
+package or Xcode project. Adding the workflow or configuration alone does
+not change the repository's active setup.
 
 Each analysis uses two threads and a 4096 MiB CodeQL memory budget; language
 jobs run one at a time. Complete SARIF reports are retained for seven days.
