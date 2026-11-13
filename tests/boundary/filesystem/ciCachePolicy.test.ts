@@ -418,7 +418,7 @@ it("shares static task snapshots only after validation using the npm cache owner
     (step) => step.name === "Save validated static task cache",
   );
   expect(restore?.uses).toBe(
-    "actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830",
+    "actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9",
   );
   expect(restore?.if).toBe("needs.changes.outputs.code == 'true'");
   expect(restore?.with).toMatchObject({ path: ".turbo/cache/" });
@@ -435,6 +435,7 @@ it("shares static task snapshots only after validation using the npm cache owner
     steps.findIndex((step) => step.run === "npm run check:ci:fast"),
   );
   const deep = ci?.workflow.jobs?.["static-deep"]?.steps ?? [];
+  const deepRestore = deep.find((step) => step.id === "static-cache");
   const deepSave = deep.find(
     (step) => step.name === "Save validated deep static task cache",
   );
@@ -442,6 +443,8 @@ it("shares static task snapshots only after validation using the npm cache owner
   const knipSave = deep.find(
     (step) => step.name === "Save Knip analysis cache",
   );
+  expect(deepRestore?.uses).toBe(restore?.uses);
+  expect(knipRestore?.uses).toBe(restore?.uses);
   expect(deepSave?.uses).toBe(
     "actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830",
   );
