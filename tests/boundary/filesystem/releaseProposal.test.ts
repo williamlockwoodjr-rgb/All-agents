@@ -643,6 +643,39 @@ it("rejects a missing manifest release before replaying a historical version ove
   ).toBe(true);
 });
 
+it("uses the configured last release SHA when its tag and release are missing", async () => {
+  const fixture = await releaseFixture({
+    config: { "last-release-sha": baseline },
+    releasedVersions: { ".": "6.8.0" },
+    releases: [],
+    commits: [
+      { sha: latest, message: "fix: current change", files: ["src/change.ts"] },
+      {
+        sha: baseline,
+        message: "chore: release 6.8.0",
+        files: ["package.json"],
+      },
+      {
+        sha: "c".repeat(40),
+        message: "fix: historical version override\n\nRelease-As: 0.4.0",
+        files: ["src/historical.ts"],
+      },
+    ],
+  });
+  const candidates = await fixture.manifest.buildPullRequests();
+  expect(candidates).toHaveLength(1);
+  expect(candidates[0]?.body.toString()).toContain("current change");
+  expect(candidates[0]?.body.toString()).not.toContain(
+    "historical version override",
+  );
+  const version = candidates[0]?.updates.find(
+    (update) => update.path === "version.txt",
+  );
+  expect(
+    version?.updater.updateContent("6.8.0 // x-release-please-version"),
+  ).toContain("6.9.0");
+});
+
 it("uses a tag-only manifest release and excludes older version overrides", async () => {
   const fixture = await releaseFixture({
     releasedVersions: { ".": "6.8.0" },

@@ -154,11 +154,11 @@
                  releasesFound++;
              }
          }
-+        // A recorded version requires its release boundary, even while a
-+        // concurrent publisher has not created the matching release/tag yet.
++        // A recorded version requires a release boundary unless one is
++        // explicitly configured with lastReleaseSha.
 +        for (const path of Object.keys(strategiesByPath)) {
 +            const expectedVersion = this.releasedVersions[path];
-+            if (expectedVersion && expectedVersion.toString() !== '0.0.0' && !releasesByPath[path]) {
++            if (expectedVersion && expectedVersion.toString() !== '0.0.0' && !releasesByPath[path] && !this.lastReleaseSha) {
 +                throw new Error(`Missing expected release for path ${path} at version ${expectedVersion.toString()}: no matching release or tag found. Refusing to bootstrap an already released package.`);
 +            }
 +        }
