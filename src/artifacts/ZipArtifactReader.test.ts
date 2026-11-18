@@ -212,7 +212,7 @@ describe("ZIP Zstandard method 93", () => {
     ).rejects.toMatchObject({
       reason: "format",
       message: expect.stringContaining("Invalid compressed data"),
-      cause: { code: "ZSTD_error_checksum_wrong" },
+      cause: { cause: { code: "ZSTD_error_checksum_wrong" } },
     });
   });
 
@@ -225,7 +225,7 @@ describe("ZIP Zstandard method 93", () => {
       name: "ArtifactReaderFailure",
       reason: "unavailable",
       message: expect.stringContaining("Zstandard dictionary"),
-      cause: { code: "ZSTD_error_dictionary_wrong" },
+      cause: { cause: { code: "ZSTD_error_dictionary_wrong" } },
     });
     expect(translateArtifactFailure("extract_artifact", failure)).toMatchObject(
       {
@@ -261,7 +261,7 @@ describe("ZIP Zstandard method 93", () => {
       ).rejects.toMatchObject({
         reason: "format",
         message: expect.stringContaining("Invalid compressed data"),
-        cause: { code: `ZSTD_error_${code}` },
+        cause: { cause: { code: `ZSTD_error_${code}` } },
       });
     },
   );
@@ -292,7 +292,7 @@ describe("ZIP Zstandard decoder window", () => {
       reason: "limit",
       boundary: "memory",
       message: expect.stringContaining("fixed 128 MiB allowance"),
-      cause: { code: "ZSTD_error_frameParameter_windowTooLarge" },
+      cause: { cause: { code: "ZSTD_error_frameParameter_windowTooLarge" } },
     });
     const translated = translateArtifactFailure("extract_artifact", failure);
     expect(translated).toMatchObject({

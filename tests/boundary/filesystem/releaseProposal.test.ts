@@ -24,6 +24,7 @@ const execute = promisify(execFile);
 const require = createRequire(import.meta.url);
 let upstream: typeof import("release-please");
 let githubRuntime: typeof import("release-please/build/src/github.js");
+let githubApiRuntime: typeof import("release-please/build/src/github-api.js");
 const baseline = "a".repeat(40);
 const latest = "b".repeat(40);
 const silent = {
@@ -47,6 +48,7 @@ it("reports an HTTP status when a release proposal error has no message", () => 
 beforeAll(async () => {
   upstream = await import("release-please");
   githubRuntime = require("release-please/build/src/github.js");
+  githubApiRuntime = require("release-please/build/src/github-api.js");
 });
 
 afterEach(() => vi.restoreAllMocks());
@@ -71,7 +73,7 @@ it("preserves the existing overflow notes if their replacement fails", async () 
     octokit: { repos: { getContent, createOrUpdateFileContents: write } },
   } as unknown as Awaited<ReturnType<typeof upstream.GitHub.create>>;
   const update = () =>
-    upstream.GitHub.prototype.createFileOnNewBranch.call(
+    githubApiRuntime.GitHubApi.prototype.createFileOnNewBranch.call(
       github,
       "release-notes.md",
       "Notes: café",
@@ -115,7 +117,7 @@ it("creates overflow notes on a new branch without requiring an existing file", 
     },
   } as unknown as Awaited<ReturnType<typeof upstream.GitHub.create>>;
   await expect(
-    upstream.GitHub.prototype.createFileOnNewBranch.call(
+    githubApiRuntime.GitHubApi.prototype.createFileOnNewBranch.call(
       github,
       "release-notes.md",
       "Notes",
@@ -780,7 +782,14 @@ it.each([
       "10",
       "10",
     ]);
-    expect(fixture.pages[1]).toEqual(fixture.pages[2]);
+    const failed = fixture.pages[1];
+    const retried = fixture.pages[2];
+    if (failed === undefined || retried === undefined) {
+      throw new Error("Expected the failed history page and its retry");
+    }
+    expect(retried).toEqual(
+      status === 502 ? { ...failed, num: Math.floor(failed.num / 2) } : failed,
+    );
     expect(fixture.historyQueries[1]).toBe(fixture.historyQueries[2]);
     expect(sleep.mock.calls).toEqual([[1000]]);
   },
@@ -921,9 +930,9 @@ const releasePatchFixture = async () => {
     require.resolve("release-please/package.json"),
   );
   const source = fileURLToPath(new URL("../../../", import.meta.url));
-  const patchPath = join(project, "patches/release-please+17.3.0.patch");
+  const patchPath = join(project, "patches/release-please+17.11.2.patch");
   const patch = await readFile(
-    join(source, "patches/release-please+17.3.0.patch"),
+    join(source, "patches/release-please+17.11.2.patch"),
     "utf8",
   );
   const members = [...patch.matchAll(/^\+\+\+ b\/(.+)$/gmu)].map((match) => {
@@ -1005,7 +1014,7 @@ it("rejects a different dependency version before patching", async () => {
     JSON.stringify({ version: "17.4.0" }),
   );
   await expect(applyReleasePleasePatch(fixture)).rejects.toThrow(
-    "requires release-please 17.3.0",
+    "requires release-please 17.11.2",
   );
 });
 

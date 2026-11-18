@@ -2,5 +2,5 @@
 export const EVMOLE_PROVIDER_IDENTITY = {
   id: "evmole-interface",
   name: "REA EVM interface adapter",
-  version: "evmole@0.9.3",
+  version: "evmole@0.9.4",
 } as const;

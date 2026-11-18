@@ -693,7 +693,7 @@ it("preserves encrypted-member and corrupt-CRC observations", async () => {
   await expectInventoryFailure(
     corruptPath,
     "format",
-    "ZIP archive is malformed: Invalid compressed data",
+    "ZIP archive is malformed: Invalid CRC32",
   );
 });
 

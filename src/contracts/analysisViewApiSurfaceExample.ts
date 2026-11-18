@@ -4,7 +4,7 @@ export const API_SURFACE_EXAMPLE = {
     source: {
       kind: "retained-evidence",
       evidence_id:
-        "ev_1cfc841a51d771fb713db42cab9979d799226b4b88efab7d9616ca4ef9316ad6",
+        "ev_f27fd9e0f0ea823e4002700221472ad67652596947b4853329c3e1f1f6f4e151",
     },
     view: {
       kind: "api-surface",
@@ -14,12 +14,12 @@ export const API_SURFACE_EXAMPLE = {
   },
   output: {
     parent_evidence_id:
-      "ev_1cfc841a51d771fb713db42cab9979d799226b4b88efab7d9616ca4ef9316ad6",
+      "ev_f27fd9e0f0ea823e4002700221472ad67652596947b4853329c3e1f1f6f4e151",
     parent_operation: "inspect_web_network_capture",
     parent_digest:
-      "1cfc841a51d771fb713db42cab9979d799226b4b88efab7d9616ca4ef9316ad6",
+      "f27fd9e0f0ea823e4002700221472ad67652596947b4853329c3e1f1f6f4e151",
     view_digest:
-      "fea1ecf2d7c23f1a25f4f2e1ba6b538a8d6e9c6a8748dad3a756a44bad64e3c2",
+      "533273e04c0a7d11f7824900d6cfb375b715936f373b33de93eb6dcf67a9fd22",
     artifact: {
       path: "/fixtures/api-surface.har",
       sha256:

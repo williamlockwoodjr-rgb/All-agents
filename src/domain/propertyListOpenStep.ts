@@ -216,6 +216,17 @@ const skipTrivia = (text: string, start: number, strict = true): number => {
   return cursor;
 };
 
+const dictionaryKeyName = (key: unknown): string => {
+  if (typeof key === "string") return key;
+  try {
+    return String(key);
+  } catch (cause) {
+    throw new Error(`Invalid plist dictionary key of type ${typeof key}`, {
+      cause,
+    });
+  }
+};
+
 /**
  * Own OpenStep containers, source depth and dictionary members together.
  * The pinned scalar decoder retains its quoted escape and hexadecimal semantics.
@@ -258,7 +269,7 @@ export const decodeOpenStepPropertyList = (
           throw new OpenStepPropertyListError("expected_equals", cursor);
         cursor += 1;
         const entry = value(depth + 1);
-        Object.defineProperty(dictionary, String(key), {
+        Object.defineProperty(dictionary, dictionaryKeyName(key), {
           value: entry,
           enumerable: true,
           configurable: true,

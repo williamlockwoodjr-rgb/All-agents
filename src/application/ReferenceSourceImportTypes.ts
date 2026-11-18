@@ -123,10 +123,12 @@ export interface ReferenceSourceImportOptions {
 }
 
 export const DEFAULT_REFERENCE_SOURCE_IGNORE_PATTERNS = [
-  ".git/",
-  ".git/hooks/",
-  // Match pointer files after directory rules to preserve their provenance.
+  // ignore reports the last matching rule. A pattern without a slash also
+  // matches the directory path, so the pointer rule precedes the directory
+  // rules; otherwise a directory is recorded as the pointer pattern.
   ".git",
+  ".git/hooks/",
+  ".git/",
   "node_modules/",
   "dist/",
   "build/",

@@ -229,7 +229,7 @@ export const evmLimiterAvailability = async (
 const replySchema = z.discriminatedUnion("ok", [
   z.strictObject({
     ok: z.literal(true),
-    version: z.literal("0.9.3"),
+    version: z.literal("0.9.4"),
     bytecode: z.strictObject({
       sha256: z.string().regex(/^[a-f0-9]{64}$/),
       bytes: z.int().nonnegative(),

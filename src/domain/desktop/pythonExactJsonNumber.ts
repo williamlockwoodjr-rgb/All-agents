@@ -14,11 +14,14 @@ def _js_string(value: float) -> str:
 
 
 def _safe_number(text: str) -> bool:
-    """lossless-json's isSafeNumber: an integer spelling within 2^53, or a float spelling that keeps its digits."""
+    """lossless-json's isSafeNumber: an integer spelling within 2^53, or a float spelling that keeps its digits.
+    A float that lands on an integer outside that range is refused, including exponential spellings such as 1e20."""
     if re.fullmatch(r"-?[0-9]+", text):
         return len(text.lstrip("-")) <= 16 and abs(int(text)) <= MAX_SAFE_INTEGER
     value = float(text)
     if not math.isfinite(value):
+        return False
+    if value.is_integer() and abs(int(value)) > MAX_SAFE_INTEGER:
         return False
     written = _js_string(value)
     return written == text or _digits(written) == _digits(text)

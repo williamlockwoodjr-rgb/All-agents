@@ -12,11 +12,22 @@ it.each([
   "{ bytes = (<ffzz0>, <0>, <a b c d>, <>); }",
   '/* header */ ("//text", "/*text*/", /* before */ value, // after\n)',
   "{ first = x second = y; third = (a, b,); }",
-  "{ (one, two) = array; { nested = key; } = object; <01ff> = data; }",
   "{} /* unterminated",
   "() ((((((((((",
 ])("preserves pinned lexical and container values for %s", (text) => {
   expect(decodeOpenStepPropertyList(text)).toEqual(parseOpenStep(text));
+});
+
+it("keeps coercible compound keys that plist 5.1 rejects as object keys", () => {
+  expect(
+    decodeOpenStepPropertyList(
+      "{ (one, two) = array; { nested = key; } = object; <01ff> = data; }",
+    ),
+  ).toEqual({
+    "one,two": "array",
+    "[object Object]": "object",
+    "1,255": "data",
+  });
 });
 
 const syntaxFailure = (read: () => unknown): Error => {
