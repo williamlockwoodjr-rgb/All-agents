@@ -165,22 +165,25 @@ describe("successful CLI token windows", () => {
     expect(page.text).toContain("showing tokens 0–2 of");
   });
 
-  it.each(["abcdefghij abcdefghij abcdefghij \n", "  😀é abcdefghij\t\r\n"])(
-    "preserves all whitespace across text pages: %j",
-    async (value) => {
-      let joined = "";
-      const total = estimateTokenCount(value);
-      for (let offset = 0; offset < total; offset += 1) {
-        const page = await renderWindow(value, offset, 1);
-        expect(page.handled).toBe(true);
-        joined += page.text.slice(
-          0,
-          page.text.lastIndexOf("\n[truncated: showing tokens "),
-        );
-      }
-      expect(joined).toBe(value);
-    },
-  );
+  it.each([
+    "abcdefghij abcdefghij abcdefghij \n",
+    "  😀é abcdefghij\t\r\n",
+    // A newline after punctuation is free in tokenx 2. A splitter that
+    // prices that newline on its own drops the following word.
+    "Hello,\nworld",
+  ])("preserves all whitespace across text pages: %j", async (value) => {
+    let joined = "";
+    const total = estimateTokenCount(value);
+    for (let offset = 0; offset < total; offset += 1) {
+      const page = await renderWindow(value, offset, 1);
+      expect(page.handled).toBe(true);
+      joined += page.text.slice(
+        0,
+        page.text.lastIndexOf("\n[truncated: showing tokens "),
+      );
+    }
+    expect(joined).toBe(value);
+  });
 });
 
 describe("token windows through Incur output policies", () => {
