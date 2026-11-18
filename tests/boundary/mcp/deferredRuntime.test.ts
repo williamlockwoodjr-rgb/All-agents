@@ -202,6 +202,7 @@ it.each([
       "composition/binary.js",
       "contracts/toolContracts.js",
     ];
+    // Rolldown 1.3 marks an original module with "// dist/<path>" rather than "#region".
     const hook = `data:text/javascript,${encodeURIComponent(`
 import { registerHooks } from "node:module";
 import { appendFileSync } from "node:fs";
@@ -211,7 +212,9 @@ registerHooks({
     const loaded = next(url, context);
     const source = loaded.source?.toString() ?? "";
     const names = modules.filter((name) =>
-      url.endsWith("/dist/" + name) || source.includes("//#region dist/" + name + "\\n"));
+      url.endsWith("/dist/" + name) ||
+      source.includes("//#region dist/" + name + "\\n") ||
+      source.includes("// dist/" + name + "\\n"));
     if (url.endsWith("/scripts/rea.mjs")) names.push("entrypoint");
     for (const name of names)
       appendFileSync(${JSON.stringify(log)}, JSON.stringify(name) + "\\n");

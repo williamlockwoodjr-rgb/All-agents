@@ -30,6 +30,18 @@ export function pluginPackageMetadata(manifest, lock) {
   packageJson.bundleDependencies = Object.keys(manifest.dependencies ?? {});
   const root = { ...lock.packages[""] };
   delete root.devDependencies;
+  // npm 11 records an optional dependency in both maps. The published manifest
+  // keeps it only under optionalDependencies, and the Claude install policy
+  // compares those objects exactly.
+  if (
+    root.dependencies !== undefined &&
+    root.optionalDependencies !== undefined
+  )
+    root.dependencies = Object.fromEntries(
+      Object.entries(root.dependencies).filter(
+        ([name]) => !Object.hasOwn(root.optionalDependencies, name),
+      ),
+    );
   const shrinkwrap = {
     ...lock,
     packages: Object.fromEntries(

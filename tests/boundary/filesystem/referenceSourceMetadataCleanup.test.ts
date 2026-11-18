@@ -210,24 +210,15 @@ it("preserves Git metadata cleanup failure and the completed source read", async
   expect(close.calls()).toBe(3);
 });
 
-it("retains later packed-ref cleanup after an earlier loose-ref read failure", async () => {
-  const { root, looseRef, packedRefs } = await createPackedRefRepository();
+it("retains packed-refs cleanup when that file is read before loose refs", async () => {
+  const { root, packedRefs } = await createPackedRefRepository();
 
   const resources = new ArtifactResourceScope();
   let allowClose = false;
-  let looseReadFailed = false;
   const packedCloseCalls = new Map<object, number>();
   openMock.mockImplementation(async (...args) => {
     const handle = await actual.open(...args);
     const path = resolve(String(args[0]));
-    if (path === resolve(looseRef)) {
-      vi.spyOn(handle, "read").mockImplementation(async () => {
-        looseReadFailed = true;
-        throw Object.assign(new Error("injected loose ref EIO"), {
-          code: "EIO",
-        });
-      });
-    }
     if (path === resolve(packedRefs)) {
       const close = handle.close.bind(handle);
       vi.spyOn(handle, "close").mockImplementation(async () => {
@@ -244,7 +235,6 @@ it("retains later packed-ref cleanup after an earlier loose-ref read failure", a
   });
 
   const result = await readReferenceSourceVcs(root, resources);
-  expect(looseReadFailed).toBe(true);
   expect(result).toMatchObject({
     ok: false,
     error: {
@@ -266,22 +256,14 @@ it("retains later packed-ref cleanup after an earlier loose-ref read failure", a
   );
 });
 
-it("keeps a later packed-ref read error primary over earlier loose-ref cleanup", async () => {
+it("does not open loose refs when packed-refs cannot be read", async () => {
   const { root, looseRef, packedRefs } = await createPackedRefRepository();
   const resources = new ArtifactResourceScope();
-  let allowClose = false;
-  const looseCloseCalls = new Map<object, number>();
+  let looseOpened = false;
   openMock.mockImplementation(async (...args) => {
     const handle = await actual.open(...args);
     const path = resolve(String(args[0]));
-    if (path === resolve(looseRef)) {
-      const close = handle.close.bind(handle);
-      vi.spyOn(handle, "close").mockImplementation(async () => {
-        looseCloseCalls.set(handle, (looseCloseCalls.get(handle) ?? 0) + 1);
-        if (!allowClose) throw new Error("injected loose ref close failure");
-        await close();
-      });
-    }
+    if (path === resolve(looseRef)) looseOpened = true;
     if (path === resolve(packedRefs))
       vi.spyOn(handle, "read").mockImplementation(async () => {
         throw Object.assign(new Error("injected packed-refs EIO"), {
@@ -290,28 +272,13 @@ it("keeps a later packed-ref read error primary over earlier loose-ref cleanup",
       });
     return handle;
   });
-  onTestFinished(async () => {
-    allowClose = true;
-    await resources.close().catch(() => undefined);
-  });
 
   const result = await readReferenceSourceVcs(root, resources);
-  if (result.ok) throw new Error("Expected Git metadata read to fail");
-  expect(result.error.message).toContain("injected packed-refs EIO");
-  expect(result.error.message).not.toContain(
-    "injected loose ref close failure",
-  );
-  expect(result.error.cleanup).toMatchObject({
-    resources: [looseRef],
-    reason: expect.stringContaining("injected loose ref close failure"),
+  expect(looseOpened).toBe(false);
+  // A packed-refs read error is not an artifact-cleanup failure, so VCS stays
+  // unknown instead of reporting a loose ref that this library order never opens.
+  expect(result).toEqual({
+    ok: true,
+    value: { kind: "unknown", head: null, dirty: null },
   });
-  expect([...looseCloseCalls.values()]).toEqual(
-    Array.from({ length: looseCloseCalls.size }, () => 2),
-  );
-
-  allowClose = true;
-  await resources.close();
-  expect([...looseCloseCalls.values()]).toEqual(
-    Array.from({ length: looseCloseCalls.size }, () => 3),
-  );
 });

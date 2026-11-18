@@ -124,9 +124,9 @@ const resolveSourceVcs = async (
     ...fs,
     promises: {
       ...fs.promises,
-      // Let isomorphic-git continue from a failed loose ref to packed-refs,
-      // then report the original read failure after resolution. This preserves
-      // both observations when packed metadata also fails cleanup.
+      // isomorphic-git reads packed-refs before loose refs. A failed packed-refs
+      // close is still reported after resolution. A later loose-ref failure is
+      // preserved when the library continues past the packed file.
       readFile: async (
         path: string | undefined,
         options:

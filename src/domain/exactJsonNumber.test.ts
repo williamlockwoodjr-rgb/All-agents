@@ -27,7 +27,8 @@ it("judges a number alike in every spelling, so an accepted number is accepted a
   }
   expect(isExactJsonNumber(1e20, "1e20")).toBe(false);
   expect(isExactJsonNumber(1e20, "100000000000000000000")).toBe(false);
-  expect(isExactJsonNumber(1e21, "1e21")).toBe(true);
+  // 1e21 is an integer outside the safe range, so lossless-json refuses it.
+  expect(isExactJsonNumber(1e21, "1e21")).toBe(false);
   expect(isExactJsonNumber(9007199254740991, "9007199254740991")).toBe(true);
   expect(isExactJsonNumber(-0, "-0")).toBe(false);
 });

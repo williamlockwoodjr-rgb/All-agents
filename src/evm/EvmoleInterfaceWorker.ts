@@ -45,7 +45,7 @@ const main = async (): Promise<void> => {
       );
     const modulePath = import.meta.resolve("evmole/no_tla");
     const metadata = z
-      .object({ version: z.literal("0.9.3") })
+      .object({ version: z.literal("0.9.4") })
       .parse(
         JSON.parse(
           await readFile(new URL("../package.json", modulePath), "utf8"),

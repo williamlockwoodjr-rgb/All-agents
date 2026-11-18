@@ -92,7 +92,7 @@ the optional manual path below. It retains explicit prepare and publish phases.
 
 Automatic main proposals and manual checkpoint preparation use
 `scripts/release-proposal.mjs` with the pinned release-please dependency.
-The controller applies `patches/release-please+17.3.0.patch` only when invoked;
+The controller applies `patches/release-please+17.11.2.patch` only when invoked;
 normal dependency installation and published-package installation do not apply it.
 The patch avoids commit-file backfills, associated PR file lists and path splitting
 for a single root Node package with the default changelog, default or
@@ -106,10 +106,12 @@ fails before proposal creation.
 
 History-page reads retry GitHub's canonical internal GraphQL response error within
 the existing five-retry budget and exponential backoff. Each retry uses the same
-cursor; permission, validation and mixed errors fail immediately. Exhaustion
+cursor. HTTP 502 retries also follow release-please's batch-size reduction.
+Internal GraphQL retries keep the original batch size: that error does not
+establish API quota exhaustion or prove that query size caused the failure.
+Permission, validation and mixed errors fail immediately. Exhaustion
 stops preparation before proposal writes. The controller does not restart proposal
-creation or retry mutations. An internal GraphQL error does not establish API
-quota exhaustion or prove that query size caused the failure. Publication
+creation or retry mutations. Publication
 continues through the pinned release-please action.
 
 A nonzero manifest version must resolve to a GitHub release or tag before

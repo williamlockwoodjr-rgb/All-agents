@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto";
 import { writeFile } from "node:fs/promises";
 import { join } from "node:path";
-import { build, buildBinary, parseBinary } from "plist";
+import { build, buildBinary } from "plist";
 import { expect, it } from "vitest";
 import { inspectBundleKeyedArchive } from "../../../src/artifacts/apple/KeyedArchiveReader.js";
 import { keyedArchiveResultSchema } from "../../../src/domain/apple/keyedArchive.js";
@@ -43,16 +43,12 @@ const fixture = async (scenario: (typeof scenarios)[number]) => {
       }),
     );
     const trailer = bytes.length - 32;
-    // Add one unreachable offset entry backed by the first trailer byte. The
-    // locked primary decoder accepts it; supplemental pre-trailer capacity does not.
+    // Claim one unreachable offset entry in the first trailer byte. plist 5.1
+    // rejects that trailer; REA still reads the reachable real.
     bytes.writeBigUInt64BE(
       bytes.readBigUInt64BE(trailer + 8) + 1n,
       trailer + 8,
     );
-    const original = parseBinary(bytes);
-    expect(original).toMatchObject({
-      $objects: ["$null", { real: 9007199254740992 }],
-    });
   } else {
     let xml = build(source)
       .replace(

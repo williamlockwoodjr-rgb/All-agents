@@ -521,6 +521,19 @@ const ZIP_FAILURE_REASONS: ReadonlyMap<string, "format" | "unavailable"> =
     ].map((message) => [message, "unavailable"] as const),
   ]);
 
+/** zip.js wraps Node codec failures, so the native code may sit on `error.cause`. */
+const codecErrorCode = (error: Error): string | undefined => {
+  const seen = new Set<unknown>();
+  let current: unknown = error;
+  while (current instanceof Error && !seen.has(current)) {
+    seen.add(current);
+    if ("code" in current && typeof current.code === "string")
+      return current.code;
+    current = current.cause;
+  }
+  return undefined;
+};
+
 /** Type a zip.js archive fault so consumers do not report it as file I/O. */
 const typedZipFailure = (
   cause: unknown,
@@ -530,7 +543,7 @@ const typedZipFailure = (
     return cause;
   // Only method 93 uses Node's native Zstandard decoder. Do not classify
   // cancellation or an unrelated codec/runtime error as malformed ZIP data.
-  const code = "code" in cause ? cause.code : undefined;
+  const code = codecErrorCode(cause);
   if (compressionMethod === 93 && code === "ZSTD_error_dictionary_wrong")
     return new ArtifactReaderFailure(
       "unavailable",

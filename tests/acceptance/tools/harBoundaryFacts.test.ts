@@ -249,7 +249,7 @@ cliTest(
     const evidence = parseEvidence(output.json);
     const capture = webNetworkCaptureSchema.parse(evidence.normalized_result);
     expect(capture.decoder.version).toBe(
-      "har-schema@2.0.0;har-schema-corrections@1;jsonc-parser@3.3.1;lossless-json@4.3.1",
+      "har-schema@2.0.0;har-schema-corrections@1;jsonc-parser@3.3.1;lossless-json@4.3.3",
     );
     expect(capture.artifact).toMatchObject({
       path,

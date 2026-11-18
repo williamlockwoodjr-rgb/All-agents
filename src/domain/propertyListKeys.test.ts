@@ -354,14 +354,20 @@ describe("OpenStep plist owned depth", () => {
     expect(() => parseXmlPropertyList(arrays(129, ""))).not.toThrow();
   });
 
-  it.each([
-    "(x, y,)",
-    "{ key = x next = (y,); }",
-    "{ (compound, key) = x; { nested = key; } = y; }",
-    "{ key = (); next = {}; }",
-  ])("preserves pinned separator and compound-key semantics for %s", (text) => {
-    expect(parseXmlPropertyList(text)).toEqual({
-      value: parse(text),
+  it.each(["(x, y,)", "{ key = x next = (y,); }", "{ key = (); next = {}; }"])(
+    "preserves pinned separator and compound-key semantics for %s",
+    (text) => {
+      expect(parseXmlPropertyList(text)).toEqual({
+        value: parse(text),
+      });
+    },
+  );
+
+  it("keeps coercible compound keys that plist 5.1 rejects as object keys", () => {
+    expect(
+      parseXmlPropertyList("{ (compound, key) = x; { nested = key; } = y; }"),
+    ).toEqual({
+      value: { "compound,key": "x", "[object Object]": "y" },
     });
   });
 

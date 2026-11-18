@@ -1,5 +1,5 @@
 import * as t from "@babel/types";
-import { expect, it, vi } from "vitest";
+import { expect, it } from "vitest";
 
 import {
   analyzeJavaScriptSemantics,
@@ -17,9 +17,11 @@ const ancestryReads = (
 ): number => {
   const original = WeakMap.prototype.get;
   let reads = 0;
-  const get = vi.spyOn(WeakMap.prototype, "get").mockImplementation(function (
+  // A Vitest spy adds a frame on every lookup. These fixtures are deep enough
+  // that the spy overflows before the analyzer's own bound walk does.
+  WeakMap.prototype.get = function (
     this: WeakMap<object, unknown>,
-    key,
+    key: object,
   ) {
     const value: unknown = original.call(this, key);
     if (
@@ -30,12 +32,12 @@ const ancestryReads = (
     )
       reads++;
     return value;
-  });
+  };
   try {
     inspect(analyzeJavaScriptSemantics(source));
     return reads;
   } finally {
-    get.mockRestore();
+    WeakMap.prototype.get = original;
   }
 };
 

@@ -37,9 +37,18 @@ const scalarArrayInput = (
       reference >>= 8n;
     }
   }
+  const referenced = new Set(objects);
   let object = 0;
   for (const offset of compatibleLayout.objectOffsets()) {
-    output.writeBigUInt64BE(offset, tableOffset + object * 8);
+    // plist 5.1 validates every offset-table entry before parsing. An
+    // unreferenced object is never decoded, so a corrupt entry must not
+    // reject the reachable values.
+    const reachable = referenced.has(object);
+    const inRange = offset >= 8n && offset < BigInt(rootOffset);
+    output.writeBigUInt64BE(
+      reachable || inRange ? offset : 8n,
+      tableOffset + object * 8,
+    );
     object += 1;
   }
   output.writeBigUInt64BE(BigInt(rootOffset), tableOffset + objectCount * 8);
