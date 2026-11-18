@@ -70,6 +70,9 @@ export interface CliResultOutput {
   begin(options: ParsedCliOutputArguments): void;
   /** Preserve caller output controls while adapting SDK builtin flags. */
   sdkArguments(args: readonly string[]): string[];
+  /** Count or window a document Incur emitted, using REA's tokenx. */
+  incurredTokenMode(): "count" | "window" | undefined;
+  renderIncurredTokenOutput(emitted: string): string;
   /** SDK generators retain their own streaming event protocol. */
   delegateStreaming(): void;
   /** Retain one-shot SDK output until the SDK supplies its authoritative status. */
@@ -80,6 +83,27 @@ export interface CliResultOutput {
   recoverFormattingFailure(cause: unknown): Promise<boolean>;
 }
 
+const INCURRED_TOKEN_FLAGS = new Set([
+  "--token-count",
+  "--token-limit",
+  "--token-offset",
+]);
+
+/** Drop token controls so Incur emits the document instead of pricing it. */
+const stripIncurTokenControls = (args: readonly string[]): string[] => {
+  const valueFlags = new Map(
+    splitIncurBuiltinArguments(args).outputValues.map((value) => [
+      value.index,
+      value.flag,
+    ]),
+  );
+  return args.filter((token, index) => {
+    const valueFlag = valueFlags.get(index);
+    if (valueFlag !== undefined) return !INCURRED_TOKEN_FLAGS.has(valueFlag);
+    return !INCURRED_TOKEN_FLAGS.has(token);
+  });
+};
+
 /** Install formatting once, after registration, for every ordinary CLI result. */
 export const streamCliCommandResults = (
   cli: CliInstance,
@@ -89,8 +113,30 @@ export const streamCliCommandResults = (
     wrapCommand(command, path, output, inheritedPolicy),
   );
   const serve = cli.serve.bind(cli);
-  cli.serve = (args = process.argv.slice(2), serveOptions) =>
-    serve(output.sdkArguments(args), serveOptions);
+  cli.serve = (args = process.argv.slice(2), serveOptions) => {
+    const forwarded = output.sdkArguments(args);
+    const mode = output.incurredTokenMode();
+    const stdout = serveOptions?.stdout;
+    // Incur would count and slice with its own nested tokenx. The published
+    // package cannot carry an override, so reapply those controls here.
+    if (mode === undefined || stdout === undefined)
+      return serve(forwarded, serveOptions);
+    let incurred = "";
+    return Promise.resolve(
+      serve(forwarded, {
+        ...serveOptions,
+        stdout: (text: string) => {
+          if (output.handled) stdout(text);
+          else incurred += text;
+        },
+      }),
+    ).then((value) => {
+      if (incurred.length === 0) return value;
+      if (output.handled) stdout(incurred);
+      else stdout(output.renderIncurredTokenOutput(incurred));
+      return value;
+    });
+  };
 };
 
 const wrapCommand = (
@@ -159,6 +205,7 @@ export const createCliResultOutput = (
   let error: AnalysisErrorProjection | undefined;
   let streaming = false;
   let sdkDocumentControls = false;
+  let incurredTokenMode: "count" | "window" | undefined;
   const sdkParts: string[] = [];
   let sdkCompletion: Promise<void> | undefined;
   let completed:
@@ -268,6 +315,7 @@ export const createCliResultOutput = (
       completed = undefined;
       streaming = false;
       sdkDocumentControls = false;
+      incurredTokenMode = undefined;
       sdkParts.length = 0;
       sdkCompletion = undefined;
     },
@@ -292,12 +340,49 @@ export const createCliResultOutput = (
             !hasFlag("--version")));
       // The caller's parsed controls remain authoritative: the CLI may adapt
       // CSV/TSV to JSON for Incur without changing the requested presentation.
-      if (format !== "jsonl" || !options.tokenCount) return normalized;
-      // Incur counts errors before REA can retain their diagnostic payload.
-      // Preserve operands using the shared builtin consumption rules.
-      return normalized.filter(
-        (token, index) => token !== "--token-count" || values.has(index),
+      // Help, version, and inapplicable schema keep Incur's document. JSONL
+      // keeps its diagnostic instead of replacing it with a count.
+      const documentWins =
+        hasFlag("--help") ||
+        hasFlag("-h") ||
+        hasFlag("--version") ||
+        (hasFlag("--schema") &&
+          ["completions", "mcp", "skills"].includes(split.command[0] ?? ""));
+      incurredTokenMode =
+        sdkDocumentControls || documentWins
+          ? undefined
+          : options.tokenCount && format !== "jsonl"
+            ? "count"
+            : options.tokenWindow && !options.tokenCount
+              ? "window"
+              : undefined;
+      if (
+        incurredTokenMode === undefined &&
+        !(format === "jsonl" && options.tokenCount)
+      )
+        return normalized;
+      // Hide the controls from Incur so it emits the document. REA applies
+      // them with its own tokenx; JSONL token-count is the exception above.
+      return stripIncurTokenControls(normalized);
+    },
+    incurredTokenMode: () => incurredTokenMode,
+    renderIncurredTokenOutput(emitted) {
+      const document = emitted.trimEnd();
+      if (incurredTokenMode === "count")
+        return `${estimateTokenCount(document)}\n`;
+      const window = sliceTextByTokenWindow(
+        document,
+        options.tokenOffset ?? 0,
+        options.tokenLimit,
       );
+      if (!window.truncated)
+        return emitted.endsWith("\n") ? emitted : `${emitted}\n`;
+      const rendered = `${window.text}\n[truncated: showing tokens ${window.start}–${window.end} of ${window.total}]`;
+      const cursor =
+        options.fullOutput && window.end < window.total
+          ? `\nnextOffset: ${window.end}`
+          : "";
+      return `${rendered}${cursor}\n`;
     },
     delegateStreaming() {
       streaming = true;
@@ -622,15 +707,17 @@ export const createCliResultOutput = (
       !options.tokenCount &&
       format !== "json" &&
       format !== "jsonl";
-    // Delegate other human formats to Incur. Markdown stays here so admission
-    // and emitted table text use the same safe formatter.
+    // Delegate ordinary human formats to Incur. Markdown stays here so
+    // admission and emitted table text use the same safe formatter. Token
+    // counts stay here too: Incur would price them with its own tokenx.
     if (
       format !== "md" &&
       format !== "json" &&
       format !== "jsonl" &&
       operationFailure === undefined &&
       !ownsFilteredOutput &&
-      !ownsSuccessfulTokenWindow
+      !ownsSuccessfulTokenWindow &&
+      !options.tokenCount
     )
       return false;
     if (format === "jsonl") {
