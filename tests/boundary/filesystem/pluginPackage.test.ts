@@ -58,6 +58,28 @@ it("preserves locked runtime facts and optional dependencies without mutating so
   });
 });
 
+it("keeps an optional dependency out of the published dependency map", () => {
+  const { manifest, lock } = fixture();
+  manifest.optionalDependencies = { optional: "1.0.0" };
+  lock.packages[""].dependencies = { runtime: "1.0.0", optional: "1.0.0" };
+  lock.packages[""].optionalDependencies = { optional: "1.0.0" };
+  const packed = pluginPackageMetadata(manifest, lock);
+  expect(packed.packageJson.dependencies).toEqual({ runtime: "1.0.0" });
+  expect(packed.packageJson.optionalDependencies).toEqual({
+    optional: "1.0.0",
+  });
+  expect(packed.shrinkwrap.packages[""].dependencies).toEqual({
+    runtime: "1.0.0",
+  });
+  expect(packed.shrinkwrap.packages[""].optionalDependencies).toEqual({
+    optional: "1.0.0",
+  });
+  expect(lock.packages[""].dependencies).toEqual({
+    runtime: "1.0.0",
+    optional: "1.0.0",
+  });
+});
+
 it("refuses to discard a security override when the package is also used at runtime", () => {
   const { manifest, lock } = fixture();
   lock.packages["node_modules/builder"].dev = false;
