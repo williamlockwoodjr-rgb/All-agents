@@ -95,7 +95,15 @@ it("uses the scope in a bounded workflow gated on administrator activation", asy
           }),
           strategy: z.object({
             "max-parallel": z.literal(1),
-            matrix: z.object({ language: z.array(z.string()) }),
+            matrix: z.object({
+              language: z.array(z.string()),
+              include: z.array(
+                z.object({
+                  language: z.string(),
+                  "full-repository": z.literal(true),
+                }),
+              ),
+            }),
           }),
           steps: z.array(
             z.object({
@@ -119,6 +127,14 @@ it("uses the scope in a bounded workflow gated on administrator activation", asy
     "python",
     "actions",
     "swift",
+    "c-cpp",
+    "csharp",
+    "java-kotlin",
+  ]);
+  expect(job.strategy.matrix.include.map(({ language }) => language)).toEqual([
+    "c-cpp",
+    "csharp",
+    "java-kotlin",
   ]);
   expect(job["runs-on"]).toBe(
     "${{ matrix.language == 'swift' && 'macos-latest' || 'ubuntu-latest' }}",
@@ -127,7 +143,8 @@ it("uses the scope in a bounded workflow gated on administrator activation", asy
     step.uses?.startsWith("github/codeql-action/init@"),
   );
   expect(init?.with).toMatchObject({
-    "config-file": ".github/codeql/production.yml",
+    "config-file":
+      "${{ !matrix.full-repository && '.github/codeql/production.yml' || '' }}",
     "build-mode": "${{ matrix.language == 'swift' && 'manual' || 'none' }}",
     threads: 2,
     ram: 4096,

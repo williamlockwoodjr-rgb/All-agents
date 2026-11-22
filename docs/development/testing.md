@@ -384,9 +384,10 @@ instrumentation remains equivalent.
 
 [The production configuration](https://github.com/morluto/rea/blob/main/.github/codeql/production.yml) excludes
 `tests/`, `scripts/fixtures/`, `*.test.*`, `*.fixture.*`, `test_*.py`, and `*_test.py` inputs
-during extraction. It retains the default queries and the existing `local`
-threat model. Production source, bridges, runtime scripts, installation and
-release controllers, and Actions remain in scope for the configured languages.
+during extraction for JavaScript/TypeScript, Python, Actions, and Swift. It
+retains the default queries and the existing `local` threat model. Production
+source, bridges, runtime scripts, installation and release controllers, and
+Actions remain in scope.
 Verification scripts remain included unless they match an explicit test path;
 excluding the entire `scripts/` directory would hide shipped entrypoints.
 The `paths` list retains repository-root traversal and explicitly includes
@@ -396,8 +397,11 @@ accept individual files as traversal roots. When changing this list, compare the
 complete production file inventory as well as alert counts.
 These exclusions do not change which behavioral tests CI executes. The Swift
 lane manually builds both production helpers on macOS because the repository
-has no Xcode project or Swift package for CodeQL autobuild. Shell and Java
-remain covered by their existing checks rather than these CodeQL lanes.
+has no Xcode project or Swift package for CodeQL autobuild. The C/C++, C#,
+and Java/Kotlin lanes use build mode `none` with the default query settings
+and full repository source scope, matching the default setup. This includes
+the C# fixtures, which contain all of the repository's C# source. Shell uses
+its own checks.
 
 [The production workflow](https://github.com/morluto/rea/blob/main/.github/workflows/codeql.yml) is inactive until an administrator replaces CodeQL **default setup** with this advanced workflow. To activate it:
 
@@ -410,10 +414,10 @@ remain covered by their existing checks rather than these CodeQL lanes.
    must perform or permit the change.
 3. In **Settings → Secrets and variables → Actions → Variables**, create the
    repository variable `REA_CODEQL_ADVANCED` with value `true`.
-4. In **Actions**, run **CodeQL production** on `main`. Verify the JavaScript/
-   TypeScript, Python, Actions, and Swift analyses complete and upload their
-   results, and inspect the Swift extraction inventory, before relying on the
-   advanced setup.
+4. In **Actions**, run **CodeQL production** on `main`. Verify all seven
+   analyses complete and upload results: JavaScript/TypeScript, Python, Actions,
+   Swift, C/C++, C#, and Java/Kotlin. Inspect the Swift extraction inventory
+   before relying on the advanced setup.
 
 Disable default setup before enabling the workflow: it rejects advanced CodeQL
 uploads. Until an administrator completes the switch, default setup continues

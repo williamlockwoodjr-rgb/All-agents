@@ -31,7 +31,15 @@ jobs:
       fail-fast: false
       max-parallel: 1
       matrix:
-        language: [javascript-typescript, python, actions, swift]
+        language: [javascript-typescript, python, actions, swift, c-cpp, csharp, java-kotlin]
+        # Preserve default setup's full source scope, including the C# fixtures.
+        include:
+          - language: c-cpp
+            full-repository: true
+          - language: csharp
+            full-repository: true
+          - language: java-kotlin
+            full-repository: true
     steps:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
         with:
@@ -41,7 +49,7 @@ jobs:
         with:
           languages: ${{ matrix.language }}
           build-mode: ${{ matrix.language == 'swift' && 'manual' || 'none' }}
-          config-file: .github/codeql/production.yml
+          config-file: ${{ !matrix.full-repository && '.github/codeql/production.yml' || '' }}
           threads: 2
           ram: 4096
       - name: Build Swift helpers
