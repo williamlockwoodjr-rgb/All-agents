@@ -31,7 +31,16 @@ jobs:
       fail-fast: false
       max-parallel: 1
       matrix:
-        language: [javascript-typescript, python, actions, swift, c-cpp, csharp, java-kotlin]
+        language:
+          [
+            javascript-typescript,
+            python,
+            actions,
+            swift,
+            c-cpp,
+            csharp,
+            java-kotlin,
+          ]
         # Preserve default setup's full source scope, including the C# fixtures.
         include:
           - language: c-cpp
